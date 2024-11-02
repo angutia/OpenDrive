@@ -1,6 +1,6 @@
 ## Diseño específico
 * Por diseño, el cliente siempre pide actualizaciones antes de mandar las suyas.
-
+* Puerto 80000
 ## Especificación de protocolo
 Notificar un cambio:
 ```
