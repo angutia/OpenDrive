@@ -24,3 +24,8 @@ Notificar un renombrado:
 CLIENTE: RENAME <nombre_viejo> <nombre_nuevo> <fecha_modificación>
 SERVIDOR: OK/ERROR <error>
 ```
+Notificar finalización de conexión:
+````
+CLIENTE: EXIT
+SERVER: OK
+````
