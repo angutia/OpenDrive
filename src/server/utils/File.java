@@ -42,11 +42,11 @@ public class File {
         return this.filename;
     }
 
-    /**
+    /** TODO: NECESITAMOS ESTO?
      * Two files are considered "equal" if their names are the same
-     * @param obj   The object to be compared with this abstract pathname
+     * @param obj The object to be compared with this abstract pathname
      *
-     * @return
+     * @return true if this.name==(File) obj.name, false otherwise
      */
     @Override
     public boolean equals(Object obj) {
