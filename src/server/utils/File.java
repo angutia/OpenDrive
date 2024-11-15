@@ -55,4 +55,24 @@ public class File {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        Set<String> ips = this.getIps();
+        long time = this.getTime();
+
+        builder.append(this.getName());
+        builder.append(" ");
+        builder.append(time);
+        builder.append(" ");
+        for (String ip : ips) {
+            builder.append(ip);
+            builder.append(",");
+        }
+        builder.deleteCharAt(builder.length() - 1); //Remove last ','
+        return builder.toString();
+
+    }
 }

@@ -2,7 +2,9 @@ package server.utils;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Collects and stores file uploads
@@ -45,32 +47,23 @@ public class UpdateLog {
 
     }
 
-    public String getFileString(String filename) {
-        StringBuilder builder = new StringBuilder();
-        File f = null;
-        Set<String> ips;
-        long time ;
+    /**
+     * Returns a list of files that were updated after the timestamp
+     * @param timestamp the timestamp
+     * @return a list of all files for which File.getTime()>timestamp.
+     */
+    public List<File> getFilesNewerThan(long timestamp) {
         synchronized (this.log) {
-            f = this.getFileByName(filename);
-            if (f==null) return "";
-            ips = f.getIps();
-            time = f.getTime();
+            return this.log.stream().filter(f -> f.getTime()>timestamp).collect(Collectors.toList());
         }
-        builder.append(filename);
-        builder.append(" ");
-        builder.append(time);
-        builder.append(" ");
-        for (String ip : ips) {
-            builder.append(ip);
-            builder.append(",");
-        }
-        builder.deleteCharAt(builder.length() - 1); //Remove last ','
-        return builder.toString();
-
     }
 
     //Returns null if no file found
-    private File getFileByName(String filename) {
-        return this.log.stream().filter(f -> f.getName().equals(filename)).findFirst().orElse(null);
+    public File getFileByName(String filename) {
+        synchronized (this.log) {
+            return this.log.stream().filter(f -> f.getName().equals(filename)).findFirst().orElse(null);
+        }
     }
+
+
 }

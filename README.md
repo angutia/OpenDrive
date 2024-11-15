@@ -14,6 +14,15 @@ SERVIDOR: FILE <nombre_archivo> <fecha_modificación> <ip1>,<ip2>,...
 SERVIDOR: DELETE <nombre_archivo> <fecha_modificación>
 CLIENTE: OK/ERROR <error> #Notifica que ha acabado de actualizar el archivo
 ```
+Conseguir todos los cambios a partir de una fecha determinada:
+```
+CLIENTE: GETALL <timestamp>
+SERVIDOR: FILE <nombre_archivo> <fecha_modificación> <ip1>,<ip2>,...
+          FILE <nombre_archivo2> <fecha_modificación2> <ip2_1>,<ip2_2>,...
+          ...
+          END
+```
+
 Notificar un borrado:
 ```
 CLIENTE: DELETE <nombre_archivo> <fecha_modificación>
