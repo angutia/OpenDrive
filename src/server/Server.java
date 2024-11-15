@@ -1,16 +1,13 @@
 package server;
 
-import server.utils.File;
 import server.utils.UpdateLog;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class Server {
 
@@ -22,7 +19,7 @@ public class Server {
         Scanner k = new Scanner(System.in);
         ClientAcceptor a = new ClientAcceptor();
         System.out.println("Starting listening on port 8000.");
-        Future<?> f = pool.submit(a);
+        pool.submit(a);
         System.out.println("Started listening on port 8000");
         String sel;
         do {
