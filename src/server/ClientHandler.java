@@ -1,5 +1,6 @@
 package server;
 
+import utils.FileEvent;
 import utils.FileModificationEvent;
 
 import java.io.*;
@@ -32,57 +33,45 @@ public class ClientHandler extends Thread{
         }
     }
 
-    public void writeAllFiles(PrintWriter writer, long timestamp) throws IOException{
-        List<FileModificationEvent> files = Server.log.getFilesNewerThan(timestamp);
-        for (FileModificationEvent f : files) {
-            writer.println("FILE " + f.toString());
+    public void writeAllFiles(PrintWriter writer) throws IOException{
+        List<FileEvent> files = Server.log.getFiles();
+        for (FileEvent f : files) {
+            writer.println(f.toString());
         }
         writer.println("END");
     }
 
-    public void writeFile(PrintWriter writer, String file) throws IOException {
-        String tosend = Server.log.getFileByName(file).toString();
-        if (!file.isEmpty()) {
-            writer.println("FILE " + tosend);
-        } else {
-            writer.println("ERROR FILE NOT FOUND");
-        }
+    public boolean writeFile(ObjectOutputStream oos, String file) throws IOException {
+        FileEvent tosend = Server.log.getFileEventByName(file);
+        if (tosend == null) return false;
+        oos.writeObject(tosend);
+        oos.flush();
+        return true;
     }
 
     public void handleClient() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(this.client.getInputStream(), StandardCharsets.UTF_8));
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(this.client.getOutputStream(), StandardCharsets.UTF_8));
-        //TODO: Quizá podríamos mandar el objeto File serializado?
+        ObjectInputStream ois = new ObjectInputStream(this.client.getInputStream());
+        ObjectOutputStream oos = new ObjectOutputStream(this.client.getOutputStream());
         String read;
         while(!(read = reader.readLine()).matches("EXIT")) {
-            if (read.matches("^GETALL .*")) {
-                String time = read.replace("GETALL ", "");
-                long timestamp;
-                try {
-                    timestamp = Long.parseLong(time);
-                    this.writeAllFiles(writer, timestamp);
-                } catch(NumberFormatException e) {
-                    writer.println("ERROR TIME SHOULD BE A UNIX TIMESTAMP");
-                }
+
+            if (read.matches("^GETALL$")) {
+                this.writeAllFiles(writer);
             }
             else if (read.matches("^GET .*")) {
                 String sendStr = read.replace("GET ", "");
-                this.writeFile(writer, sendStr);
+                boolean found = this.writeFile(oos, sendStr);
+                if (!found) writer.println("ERROR FILE NOT FOUND");
 
-            } else if (read.matches("PUSH .* .*")) {
-                String filename = read.split(" ")[1];
-                String newTime = read.split(" ")[2];
-                long time;
+            } else if (read.matches("^PUSH$")) {
                 try {
-                    time = Long.parseLong(newTime);
-                    long updatedTime = Server.log.pushUpdate(time, filename, this.client.getInetAddress().getHostAddress());
-                    if (updatedTime==time) {
-                        writer.println("OK");
-                    } else {
-                        writer.println("ERROR NEWER VERSION AVAILABLE");
-                    }
-                } catch(NumberFormatException e) {
-                    writer.println("ERROR TIME SHOULD BE A UNIX TIMESTAMP");
+                    FileEvent event = (FileEvent) ois.readObject();
+                    Server.log.pushUpdate(event, this.client.getInetAddress().getHostAddress());
+                    writer.println("OK");
+                } catch(ClassNotFoundException e) {
+                    writer.println("ERROR CLASS NOT FOUND");
                 }
             }
             writer.flush();

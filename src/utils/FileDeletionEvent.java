@@ -7,7 +7,7 @@ public class FileDeletionEvent extends FileEvent{
     }
 
     @Override
-    public EventType getType() {
-        return EventType.DELETION;
+    public String toString() {
+        return "DELETION " + super.toString();
     }
 }

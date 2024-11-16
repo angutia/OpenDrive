@@ -9,10 +9,9 @@ import java.util.Set;
 public class FileModificationEvent extends FileEvent{
     private HashSet<String> ips; //Set of ips containing this file version
 
-    public FileModificationEvent(String pathname, String ip, long firstTime) {
+    public FileModificationEvent(String pathname, long firstTime) {
         super(pathname, firstTime);
         this.ips = new HashSet<>();
-        this.ips.add(ip);
     }
 
     public boolean addIp(String ip) {
@@ -45,26 +44,6 @@ public class FileModificationEvent extends FileEvent{
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-
-        Set<String> ips = this.getIps();
-        long time = this.getTime();
-
-        builder.append(this.getName());
-        builder.append(" ");
-        builder.append(time);
-        builder.append(" ");
-        for (String ip : ips) {
-            builder.append(ip);
-            builder.append(",");
-        }
-        builder.deleteCharAt(builder.length() - 1); //Remove last ','
-        return builder.toString();
-
-    }
-
-    @Override
-    public EventType getType() {
-        return EventType.MODIFICATION;
+        return "MODIFICATION " + super.toString();
     }
 }

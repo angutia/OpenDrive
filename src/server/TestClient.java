@@ -1,5 +1,9 @@
 package server;
 
+import utils.FileDeletionEvent;
+import utils.FileEvent;
+import utils.FileModificationEvent;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -8,19 +12,44 @@ public class TestClient {
         Socket s = null;
         PrintWriter w = null;
         BufferedReader r = null;
+        ObjectInputStream ois = null;
+        ObjectOutputStream oos = null;
         try {
             s = new Socket("localhost", 8000);
             w = new PrintWriter(new OutputStreamWriter(s.getOutputStream(), "UTF-8"));
             r = new BufferedReader(new InputStreamReader(s.getInputStream(), "UTF-8"));
+            //-------------------
+            // ESTE ORDEN IMPORTA
+            oos = new ObjectOutputStream(s.getOutputStream());
+            ois = new ObjectInputStream(s.getInputStream());
+            //-------------------
             long unixTime = System.currentTimeMillis() / 1000L;
-            w.println("PUSH hola.txt " + (unixTime+1000L));
+
+            //EJEMPLO: mandar un push
+            w.println("PUSH");
             w.flush();
+            oos.writeObject(new FileModificationEvent("hola.txt", unixTime));
             System.out.println("SERVER: " + r.readLine()); //DEBERÍA SER OK
-            w.println("GETALL " + unixTime);
+
+            //EJEMPLO: hacer un getall
+            w.println("GETALL");
             w.flush();
             String read;
             while(!(read = r.readLine()).equalsIgnoreCase("END")) {
                 System.out.println(read);
+            }
+
+            //EJEMPLO: hacer un get
+            w.println("GET hola.txt");
+            w.flush();
+            try {
+                FileEvent event = (FileEvent) ois.readObject();
+                System.out.println("EVENTO: " + event);
+                //Como ver que tipo de evento es
+                System.out.println("FileModificationEvent? " + (event instanceof FileModificationEvent)); //True
+                System.out.println("FileDeletionEvent? " + (event instanceof FileDeletionEvent)); //False
+            } catch(ClassNotFoundException ex) {
+                System.err.println("Error al deserializar la clase");
             }
             r.close();
             w.close();

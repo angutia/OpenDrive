@@ -1,10 +1,9 @@
 package utils;
 
-public abstract class FileEvent {
-    enum EventType {
-        MODIFICATION,
-        DELETION
-    }
+import java.io.Serializable;
+
+public abstract class FileEvent implements Serializable {
+
     protected String fileName;
     protected long eventTime;
     public FileEvent(String fileName, long eventTime) {
@@ -19,5 +18,11 @@ public abstract class FileEvent {
         return this.eventTime;
     }
 
-    public abstract EventType getType();
+    /**
+     * Return a short string representation of this object
+     * @return "{evenType} {fileName} {eventTime}"
+     */
+    public String toString() {
+        return this.fileName + " " + this.eventTime;
+    }
 }

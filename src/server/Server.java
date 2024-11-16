@@ -24,7 +24,7 @@ public class Server {
             System.out.print("Menú de servidor. Introduce opción\n 1. Mostrar registro de actualización\n 2. Salir\n>");
             sel = k.nextLine();
             if (sel.equalsIgnoreCase("1")) {
-                log.getFilesNewerThan(-1L).forEach(System.out::println);
+                log.getFiles().forEach(System.out::println);
             }
         } while (!sel.equalsIgnoreCase("2"));
         try {
