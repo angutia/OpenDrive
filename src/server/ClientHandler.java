@@ -77,8 +77,9 @@ public class ClientHandler extends Thread{
             } else if (read.matches("^PUSH$")) {
                 try {
                     FileEvent event = (FileEvent) ois.readObject();
-                    Server.log.pushUpdate(event, this.client.getInetAddress().getHostAddress());
-                    writer.println("OK");
+                    long lastTime = Server.log.pushUpdate(event, this.client.getInetAddress().getHostAddress());
+
+                    writer.println((lastTime > event.getTime()) ? "ERROR NEWER VERSION AVAILABLE" : "OK");
                 } catch(ClassNotFoundException e) {
                     writer.println("ERROR CLASS NOT FOUND");
                 }

@@ -3,11 +3,9 @@ package server;
 import utils.FileEvent;
 import utils.FileModificationEvent;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Collects and stores file uploads
@@ -28,7 +26,7 @@ public class UpdateLog {
      * @return the time of last modification of the file
      */
     public long pushUpdate(FileEvent newEvent, String ip) {
-        FileEvent file = null;
+        FileEvent file;
         synchronized (this.log) {
             file = this.getFileEventByName(newEvent.getName());
             if (file != null) {
