@@ -1,4 +1,6 @@
-package server.utils;
+package server;
+
+import utils.FileModificationEvent;
 
 import java.util.HashSet;
 import java.util.List;
@@ -11,7 +13,7 @@ import java.util.stream.Collectors;
  */
 public class UpdateLog {
 
-    final Set<File> log; //Archivo, fechaultimamodificacion
+    final Set<FileModificationEvent> log; //Archivo, fechaultimamodificacion
 
     public UpdateLog() {
         this.log = new HashSet<>();
@@ -26,7 +28,7 @@ public class UpdateLog {
      * @return the time of last modification of the file
      */
     public long pushUpdate(long time, String filename, String ip) {
-        File file = null;
+        FileModificationEvent file = null;
         synchronized (this.log) {
             file = this.getFileByName(filename);
             if (file != null) {
@@ -38,7 +40,7 @@ public class UpdateLog {
                     return file.getTime();
                 }
             } else {
-                file = new File(filename, ip, time);
+                file = new FileModificationEvent(filename, ip, time);
                 this.log.add(file);
                 return time;
             }
@@ -51,14 +53,14 @@ public class UpdateLog {
      * @param timestamp the timestamp
      * @return a list of all files for which File.getTime()>timestamp.
      */
-    public List<File> getFilesNewerThan(long timestamp) {
+    public List<FileModificationEvent> getFilesNewerThan(long timestamp) {
         synchronized (this.log) {
             return this.log.stream().filter(f -> f.getTime()>timestamp).collect(Collectors.toList());
         }
     }
 
     //Returns null if no file found
-    public File getFileByName(String filename) {
+    public FileModificationEvent getFileByName(String filename) {
         synchronized (this.log) {
             return this.log.stream().filter(f -> f.getName().equals(filename)).findFirst().orElse(null);
         }

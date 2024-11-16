@@ -57,17 +57,17 @@ public class VersionChecker extends TimerTask{
     }
 
     private void notifyChanges (String fileName, long lastModified) {
-        try {
+        //try {
             // ¿Socket y los Streams pueden ser compartidos por toda la clase?
-            out.println("PUSH "+ fileName +" "+lastModified);
-            out.flush();
+            //out.println("PUSH "+ fileName +" "+lastModified);
+            //out.flush();
 
-            if (in.readLine().startsWith("ERROR")) {
+            //if (in.readLine().startsWith("ERROR")) {
                 // Manejar el error
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            //}
+        //} catch (IOException e) {
+            //e.printStackTrace();
+        //}
     }
 
     private void notifyDelete (long lastModified) {

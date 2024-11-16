@@ -1,4 +1,4 @@
-package server.utils;
+package utils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -6,19 +6,13 @@ import java.util.Set;
 /**
  * Represents a File stored in the shared folder
  */
-public class File {
-    private long lastModified;
-    private String filename;
+public class FileModificationEvent extends FileEvent{
     private HashSet<String> ips; //Set of ips containing this file version
-    public File(String pathname, String ip) {
-        this.ips = new HashSet<>();
-        this.filename=pathname;
-        this.ips.add(ip);
-    }
 
-    public File(String pathname, String ip, long firstTime) {
-        this(pathname, ip);
-        this.lastModified=firstTime;
+    public FileModificationEvent(String pathname, String ip, long firstTime) {
+        super(pathname, firstTime);
+        this.ips = new HashSet<>();
+        this.ips.add(ip);
     }
 
     public boolean addIp(String ip) {
@@ -31,16 +25,9 @@ public class File {
 
     public void newTime(long time) {
         this.ips.clear();
-        this.lastModified=time;
+        this.eventTime=time;
     }
 
-    public long getTime() {
-        return this.lastModified;
-    }
-
-    public String getName() {
-        return this.filename;
-    }
 
     /** TODO: NECESITAMOS ESTO?
      * Two files are considered "equal" if their names are the same
@@ -50,8 +37,8 @@ public class File {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof File) {
-            return this.getName().equals(((File) obj).getName());
+        if (obj instanceof FileModificationEvent) {
+            return this.getName().equals(((FileModificationEvent) obj).getName());
         }
         return false;
     }
@@ -74,5 +61,10 @@ public class File {
         builder.deleteCharAt(builder.length() - 1); //Remove last ','
         return builder.toString();
 
+    }
+
+    @Override
+    public EventType getType() {
+        return EventType.MODIFICATION;
     }
 }

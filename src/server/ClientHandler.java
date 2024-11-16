@@ -1,6 +1,6 @@
 package server;
 
-import server.utils.File;
+import utils.FileModificationEvent;
 
 import java.io.*;
 import java.net.Socket;
@@ -33,8 +33,8 @@ public class ClientHandler extends Thread{
     }
 
     public void writeAllFiles(PrintWriter writer, long timestamp) throws IOException{
-        List<File> files = Server.log.getFilesNewerThan(timestamp);
-        for (File f : files) {
+        List<FileModificationEvent> files = Server.log.getFilesNewerThan(timestamp);
+        for (FileModificationEvent f : files) {
             writer.println("FILE " + f.toString());
         }
         writer.println("END");

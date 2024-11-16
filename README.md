@@ -10,15 +10,14 @@ SERVIDOR: OK/ERROR <error>
 Conseguir cambios:
 ```
 CLIENTE: GET <nombre_archivo>
-SERVIDOR: FILE <nombre_archivo> <fecha_modificación> <ip1>,<ip2>,...
-SERVIDOR: DELETE <nombre_archivo> <fecha_modificación>
+SERVIDOR: <objeto de clase FileEvent>
 CLIENTE: OK/ERROR <error> #Notifica que ha acabado de actualizar el archivo
 ```
-Conseguir todos los cambios a partir de una fecha determinada:
+Conseguir la última actualización de todos los archivos:
 ```
-CLIENTE: GETALL <timestamp>
-SERVIDOR: FILE <nombre_archivo> <fecha_modificación> <ip1>,<ip2>,...
-          FILE <nombre_archivo2> <fecha_modificación2> <ip2_1>,<ip2_2>,...
+CLIENTE: GETALL
+SERVIDOR: FILE <nombre_archivo> <fecha_modificación>
+          DELETE <nombre_archivo2> <fecha_modificación2> #Si el archivo ha sido borrado
           ...
           END
 ```
