@@ -48,9 +48,24 @@ public class TestClient {
                 //Como ver que tipo de evento es
                 System.out.println("FileModificationEvent? " + (event instanceof FileModificationEvent)); //True
                 System.out.println("FileDeletionEvent? " + (event instanceof FileDeletionEvent)); //False
+                //Si es una modificacion, obtenemos las IPs con
+                if (event instanceof FileModificationEvent event1) {
+                    System.out.println("IPS de la modificacion");
+                    for(String ip : event1.getIps()) {
+                        System.out.print(ip+",");
+                    }
+                    System.out.println();
+                }
+
+                //Por aquí descargaríamos el archivo de otro cliente etc etc ...
+                //descargarArchivo();
+                //Por último, notificamos al servidor de que tenemos la última versión
+                w.println("OK");
+                w.flush();
             } catch(ClassNotFoundException ex) {
                 System.err.println("Error al deserializar la clase");
             }
+
             r.close();
             w.close();
         } catch (IOException e) {

@@ -64,7 +64,16 @@ public class ClientHandler extends Thread{
                 String sendStr = read.replace("GET ", "");
                 boolean found = this.writeFile(oos, sendStr);
                 if (!found) writer.println("ERROR FILE NOT FOUND");
-
+                else {
+                    String response = reader.readLine(); //READ THE OK OR ERROR
+                    if (!response.equalsIgnoreCase("OK")) {
+                        //TODO better error handling?
+                        System.err.println("[ClientHandler] Client sent error '" + response + "'");
+                        continue;
+                    }
+                    //Add the client ip to the list of updated clients
+                    Server.log.addIP(sendStr, this.client.getInetAddress().getHostAddress());
+                }
             } else if (read.matches("^PUSH$")) {
                 try {
                     FileEvent event = (FileEvent) ois.readObject();

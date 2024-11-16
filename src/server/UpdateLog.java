@@ -33,7 +33,7 @@ public class UpdateLog {
             file = this.getFileEventByName(newEvent.getName());
             if (file != null) {
                 if (file.getTime()> newEvent.getTime()) {
-                    //File is newer
+                    //File is newer, we don't add the sender ip
                     return file.getTime();
                 } else {
                     //newEvent is newer
@@ -50,7 +50,13 @@ public class UpdateLog {
         }
 
     }
-
+    //Add an IP to a file, assuming the file is a modification
+    public void addIP(String filename, String ip) {
+        FileEvent e = this.getFileEventByName(filename);
+        if (e instanceof FileModificationEvent event) {
+            event.addIp(ip);
+        }
+    }
 
     /**
      * Returns a list of files that were updated after the timestamp
