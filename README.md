@@ -1,7 +1,8 @@
 ## Diseño específico
 * Por diseño, el cliente siempre pide actualizaciones antes de mandar las suyas.
-* Puerto 8000
-## Especificación de protocolo
+* Puerto servidor 8000
+* Puerto cliente 66666
+## Especificación de protocolo cliente - servidor
 Notificar un cambio:
 ```
 CLIENTE: PUSH 
@@ -32,4 +33,14 @@ Notificar un renombrado:
 ```
 CLIENTE: RENAME <nombre_viejo> <nombre_nuevo> <fecha_modificación>
 SERVIDOR: OK/ERROR <error>
+```
+
+## Especificación de protocolo cliente - cliente
+Conseguir un archivo:
+```
+CLIENTE 1: GET <nombre_archivo>
+CLIENTE 2: OK
+CLIENTE 2: <bytes_archivo>
+
+CLIENTE 2: ERROR <error> #En caso de no tener el archivo, por ejemplo
 ```

@@ -5,10 +5,10 @@ import java.util.Timer;
 
 public class Client {
 
-    private static long refreshRate; // Refrech rate in milliseconds
+    private static long refreshRate; // Refresh rate in milliseconds
     private static String dirRoute;
     private static String serverHost;
-    private static int serverPort;
+    private static int serverPort = 80000;
 
     public static void main (String [] args) {
         dirRoute = "D:\\Prueba OpenDrive";

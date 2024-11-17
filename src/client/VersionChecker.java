@@ -2,14 +2,26 @@ package client;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 import java.util.TimerTask;
+import utils.FileDeletionEvent;
+import utils.FileEvent;
+import utils.FileModificationEvent;
 
 public class VersionChecker extends TimerTask{
     private String dirRoute;
+    private File dir;
 
     public VersionChecker(String dir) {
         this.dirRoute = dir;
@@ -17,60 +29,132 @@ public class VersionChecker extends TimerTask{
 
     @Override
     public void run() {
-        long lastModified;
-        File dir = new File(dirRoute);
-        for (File file : dir.listFiles()) {
-            // Lo primero es pedir al servidor la última fecha de modificación para compararla con la del Cliente
-            try (Socket socket = new Socket(Client.getServerHost(), Client.getServerPort());
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                PrintWriter out = new PrintWriter(socket.getOutputStream());
-            ){
-                out.println("GET "+file.getName());
-                out.flush();
-                String res = in.readLine(); 
-                if (res==null) {
+        dir = new File(dirRoute);
+        List<String> files = Arrays.asList(dir.list());
 
-                } else if (res.startsWith("FILE")) { // Caso en el que el servidor tenga alguna versión del archivo
-                    lastModified = Long.parseLong(res.split(" ")[2]);
-                    if (lastModified<file.lastModified()) { // Si el archivo es una versión más nueva que la del servidor
-                        notifyChanges(file.getName(), file.lastModified());
-                    } else if (lastModified>file.lastModified()){ // Si el archivo es una versión más vieja que la del servidor
-                        // Pedir a otro Cliente de la lista de IPs el archivo
-                    }
-                } else if (res.startsWith("DELETE")){
-                    file.delete();
-                } else if (res.startsWith("ERROR")) {
-                    // Manejar el error
+        // Lo primero es pedir al servidor la última actualización de todos los archivos de la carpeta
+        try (Socket socket = new Socket(Client.getServerHost(), Client.getServerPort());
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(socket.getOutputStream());
+        // ESTE ORDEN IMPORTA
+        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+        ){
+            out.println("GETALL");
+            out.flush();
+            String res = in.readLine();
+
+            // Para cada actualización, comprobar si es una modificación o un borrado
+            while (res!=null && !res.startsWith("END")) {
+                String fName = res.split(" ")[1];
+                File [] fNameList = dir.listFiles((file,name)->name.equals(fName));              
+                if (res.startsWith("MODIFICATION")) {
+                    if (files.contains(fName)) { // En el caso de que ya exista el archivo en la carpeta Cliente
+                        long lastModifiedClient = fNameList[0].lastModified();
+                        long lastModifiedServer = Long.parseLong(res.split(" ")[2]);
+                        if (lastModifiedServer<lastModifiedClient) { // Si el archivo del Cliente es una versión más nueva que la del Servidor
+                            files.remove(fName);
+                            notifyModification(fName, lastModifiedClient, in, out, oos, ois);
+                        } else if (lastModifiedServer>lastModifiedClient){ // Si el archivo es una versión más vieja que la del Servidor
+                            // Hacer un GET y conseguir el archivo
+                        }
+                    } else { // En el caso de que no exista el archivo en la carpeta Cliente
+                        // ¿Cómo se sabe si lo tengo que crear porque no lo tenía (GET) o lo he borrado y tengo que avisar del borrado (PUSH)?
+
+                        // Hacer un GET y conseguir el archivo
+                        files.add(fName);
+
+                        // Hacer un PUSH y avisar del borrado
+                    }                    
+                } else if (res.startsWith("DELETION")) {
+                    if (files.remove(fName)) { // En el caso de que exista en la carpeta Cliente el archivo que ha sido borrado
+                        // Manejar el borrado
+                        fNameList[0].delete();
+                    } else {
+                        // En principio nada, el archivo ha sido borrado pero no estaba en la carpeta del cliente así que se queda igual
+                    } 
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+                res = in.readLine();
             }
+            
+            // Hacer un GET de cada archivo en files
+            for (String fName : files) {
+                getFileEvent(fName, in, out, oos, ois);
+            }
+
+
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
-
-
-
-
-
-        
-		lastModified = dir.lastModified();
-		
     }
 
-    private void notifyChanges (String fileName, long lastModified) {
-        //try {
-            // ¿Socket y los Streams pueden ser compartidos por toda la clase?
-            //out.println("PUSH "+ fileName +" "+lastModified);
-            //out.flush();
+    private boolean notifyModification (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos, ObjectInputStream ois) throws IOException {
+        FileEvent fileModification = new FileModificationEvent(fileName, lastModified);
+        out.println("PUSH");
+        out.flush();
+        oos.writeObject(fileModification);
+        oos.flush();
 
-            //if (in.readLine().startsWith("ERROR")) {
-                // Manejar el error
-            //}
-        //} catch (IOException e) {
-            //e.printStackTrace();
-        //}
+        String res = in.readLine();
+        return !res.startsWith("ERROR");
     }
 
-    private void notifyDelete (long lastModified) {
+    private boolean notifyDelete (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos, ObjectInputStream ois) throws IOException {
+        FileEvent fileModification = new FileDeletionEvent(fileName, lastModified);
+        out.println("PUSH");
+        out.flush();
+        oos.writeObject(fileModification);
+        oos.flush();
 
+        String res = in.readLine();
+        return !res.startsWith("ERROR");
+    }
+
+    private void getFileEvent (String fName, BufferedReader in, PrintWriter out, ObjectOutputStream oos, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        out.println("GET " + fName);
+        out.flush();
+
+        FileEvent fileEvent = (FileEvent) ois.readObject();
+        if (fileEvent instanceof FileModificationEvent) {
+            FileModificationEvent fileModificationEvent = (FileModificationEvent) fileEvent;
+            File [] fNameList = dir.listFiles((file,name)->name.equals(fName));
+            if (fNameList.length!=0) {
+                fNameList[0].delete();
+            }
+            Set<String> IPs = fileModificationEvent.getIps();
+            for (String IP : IPs) {
+                try (Socket clientSocket = new Socket(IP,66666);
+                PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
+                //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
+                Scanner clientIn = new Scanner(clientSocket.getInputStream()); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
+                FileOutputStream fos = new FileOutputStream(new File(dir,fName));
+                InputStream is = clientSocket.getInputStream();
+                ){
+                    clientOut.println("GET " + fName);
+                    clientOut.flush();
+
+                    String res = clientIn.nextLine();
+                    if (res.startsWith("OK")) {
+                        byte [] buff = new byte[2048];
+                        int read = is.read(buff);
+                        while(read!=-1) {
+                            fos.write(buff, 0, read);
+                            read = is.read(buff, 0, read);
+                        }
+
+                        out.println("OK"); // Notifica al servidor de que ha actualizado el archivo
+                        out.flush();
+                        break;
+                    } else {
+                        //Manejar el error
+                    }
+                    
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            // Si se ha recorrido IPs entero y no se ha actualizado el archivo, avisar.
+        }
     }
 }
