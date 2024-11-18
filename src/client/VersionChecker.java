@@ -54,7 +54,7 @@ public class VersionChecker extends TimerTask{
                         long lastModifiedServer = Long.parseLong(res.split(" ")[2]);
                         if (lastModifiedServer<lastModifiedClient) { // Si el archivo del Cliente es una versión más nueva que la del Servidor
                             files.remove(fName);
-                            notifyModification(fName, lastModifiedClient, in, out, oos, ois);
+                            notifyModification(fName, lastModifiedClient, in, out, oos);
                         } else if (lastModifiedServer>lastModifiedClient){ // Si el archivo es una versión más vieja que la del Servidor
                             // Hacer un GET y conseguir el archivo
                         }
@@ -79,7 +79,7 @@ public class VersionChecker extends TimerTask{
             
             // Hacer un GET de cada archivo en files
             for (String fName : files) {
-                getFileEvent(fName, in, out, oos, ois);
+                getFileEvent(fName, out, ois);
             }
 
 
@@ -89,7 +89,7 @@ public class VersionChecker extends TimerTask{
         }
     }
 
-    private boolean notifyModification (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos, ObjectInputStream ois) throws IOException {
+    private boolean notifyModification (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos) throws IOException {
         FileEvent fileModification = new FileModificationEvent(fileName, lastModified);
         out.println("PUSH");
         out.flush();
@@ -111,7 +111,7 @@ public class VersionChecker extends TimerTask{
         return !res.startsWith("ERROR");
     }
 
-    private void getFileEvent (String fName, BufferedReader in, PrintWriter out, ObjectOutputStream oos, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    private void getFileEvent (String fName, PrintWriter out, ObjectInputStream ois) throws IOException, ClassNotFoundException {
         out.println("GET " + fName);
         out.flush();
 
@@ -123,13 +123,15 @@ public class VersionChecker extends TimerTask{
                 fNameList[0].delete();
             }
             Set<String> IPs = fileModificationEvent.getIps();
+            boolean modificationCompleted = false;
             for (String IP : IPs) {
+                // Se conceta a otro cliente en IP
                 try (Socket clientSocket = new Socket(IP,66666);
                 PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
                 //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
-                Scanner clientIn = new Scanner(clientSocket.getInputStream()); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
-                FileOutputStream fos = new FileOutputStream(new File(dir,fName));
                 InputStream is = clientSocket.getInputStream();
+                Scanner clientIn = new Scanner(is); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
+                FileOutputStream fos = new FileOutputStream(new File(dir,fName));
                 ){
                     clientOut.println("GET " + fName);
                     clientOut.flush();
@@ -142,9 +144,10 @@ public class VersionChecker extends TimerTask{
                             fos.write(buff, 0, read);
                             read = is.read(buff, 0, read);
                         }
+                        fos.flush();
 
                         out.println("OK"); // Notifica al servidor de que ha actualizado el archivo
-                        out.flush();
+                        modificationCompleted = true;
                         break;
                     } else {
                         //Manejar el error
@@ -154,7 +157,11 @@ public class VersionChecker extends TimerTask{
                     e.printStackTrace();
                 }
             }
-            // Si se ha recorrido IPs entero y no se ha actualizado el archivo, avisar.
+            // Si se ha recorrido IPs entero y no se ha actualizado el archivo, avisar
+            if (!modificationCompleted) {
+                out.println("ERROR");
+            }
+            out.flush();
         }
     }
 }
