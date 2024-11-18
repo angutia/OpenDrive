@@ -2,6 +2,8 @@
 * Por diseño, el cliente siempre pide actualizaciones antes de mandar las suyas.
 * Puerto servidor 8000
 * Puerto cliente 66666
+* El cliente guarda un historial de los archivos que tenía en la última actualización.
+* Antes de cerrar el cliente, se actualiza una última vez.
 ## Especificación de protocolo cliente - servidor
 Notificar un cambio:
 ```
