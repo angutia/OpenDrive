@@ -42,6 +42,7 @@ public class Server {
                 server = new ServerSocket(8000);
                 while (true) {
                     try {
+                        //TODO: hacer esto mediante un timeout en el serversocket
                         Socket client1 = server.accept();
                         pool.submit(new ClientHandler(client1));
                     }
