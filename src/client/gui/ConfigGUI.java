@@ -14,6 +14,7 @@ import javax.swing.JList;
 import javax.swing.AbstractListModel;
 import javax.swing.ListSelectionModel;
 import java.awt.GridLayout;
+import java.awt.event.WindowAdapter;
 import java.awt.FlowLayout;
 import javax.swing.JLayeredPane;
 import javax.swing.JTextPane;
@@ -92,7 +93,11 @@ public class ConfigGUI extends JFrame {
 				
 			}
 		});
-		
+//		this.addWindowListener(new WindowAdapter() {
+//			public void windowClosed(WindowEvent e) {
+//				
+//			}
+//		});
 		JPanel panelConfig = new JPanel();
 		panel.add(panelConfig, "CONFIG");
 		panelConfig.setLayout(new GridLayout(0, 2, 0, 0));
