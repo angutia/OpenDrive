@@ -18,14 +18,15 @@ public class Client {
     private static ExecutorService pool = Executors.newCachedThreadPool();
 
     public static void main (String [] args) {
-        dirRoute = "D:\\Prueba OpenDrive";
+        dirRoute = "E:\\Prueba OpenDrive";
+        refreshRate=30000;
 		Calendar init = Calendar.getInstance();
 		
 		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(new VersionChecker(dirRoute), init.getTime(), refreshRate);
 
         
-        try (ServerSocket clientServerSocket = new ServerSocket(66666)) {
+        try (ServerSocket clientServerSocket = new ServerSocket(6666)) {
             while (true) {
                 try {
                     Socket clientSocket = clientServerSocket.accept();

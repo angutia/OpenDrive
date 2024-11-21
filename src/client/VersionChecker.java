@@ -78,6 +78,7 @@ public class VersionChecker extends TimerTask{
             }
             
             // Hacer un GET de cada archivo en files
+            //TODO: solo hacer GET si es un archivo modificado por otro cliente
             for (String fName : files) {
                 getFileEvent(fName, out, ois);
             }
@@ -126,7 +127,7 @@ public class VersionChecker extends TimerTask{
             boolean modificationCompleted = false;
             for (String IP : IPs) {
                 // Se conceta a otro cliente en IP
-                try (Socket clientSocket = new Socket(IP,66666);
+                try (Socket clientSocket = new Socket(IP,6666);
                 PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
                 //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
                 InputStream is = clientSocket.getInputStream();
