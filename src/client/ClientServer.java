@@ -37,7 +37,8 @@ public class ClientServer implements Runnable{
             if (message.matches("^GET .*")) {
                 String fName = message.split(" ")[1];
                 File [] fNameList = dir.listFiles((file,name)->name.equals(fName));
-                if (fNameList.length!=0) {                    
+                //TODO si fNameList==null la hemos liado
+                if (fNameList.length!=0) {
                     File file = fNameList[0];
                     fis = new FileInputStream(file);
 
