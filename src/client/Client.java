@@ -20,7 +20,7 @@ public class Client {
     public static void main (String [] args) {
         dirRoute = "D:\\Prueba OpenDrive";
 		Calendar init = Calendar.getInstance();
-		
+
 		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(new VersionChecker(dirRoute), init.getTime(), refreshRate);
 

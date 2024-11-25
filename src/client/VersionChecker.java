@@ -11,7 +11,9 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TimerTask;
@@ -22,9 +24,16 @@ import utils.FileModificationEvent;
 public class VersionChecker extends TimerTask{
     private String dirRoute;
     private File dir;
+    private static Map<String,Long> fileRegister = new HashMap<>();
 
     public VersionChecker(String dir) {
         this.dirRoute = dir;
+    }
+
+    public synchronized void updateFileRegister () {
+        for (File file : dir.listFiles()){
+            fileRegister.put(file.getName(), file.lastModified());
+        }
     }
 
     @Override
