@@ -27,7 +27,7 @@ public class Server {
                 log.getFiles().forEach(System.out::println);
             }
         } while (!sel.equalsIgnoreCase("2"));
-        
+        //TODO cerrar el thread
         System.out.println("Apagado servidor. Saliendo.");
         pool.shutdown();
     }
