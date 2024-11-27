@@ -27,27 +27,22 @@ public class Server {
                 log.getFiles().forEach(System.out::println);
             }
         } while (!sel.equalsIgnoreCase("2"));
-        try {
-            if (a.server != null) a.server.close();
-        } catch(IOException e) {
-            System.err.println("ERROR AL CERRAR SERVIDOR");
-        }
+        
         System.out.println("Apagado servidor. Saliendo.");
         pool.shutdown();
     }
     public static class ClientAcceptor extends Thread {
-        public ServerSocket server = null;
+        private ServerSocket server = null;
         public void run() {
             try {
                 server = new ServerSocket(8000);
-                while (true) {
+                server.setSoTimeout(10*1000);
+                while (!this.server.isClosed()) {
                     try {
-                        //TODO: hacer esto mediante un timeout en el serversocket
                         Socket client1 = server.accept();
                         pool.submit(new ClientHandler(client1));
                     }
                     catch (IOException e) {
-                        if (server.isClosed()) break;
                         System.out.println("[SERVER THREAD] Error while handling client");
                     }
                 }

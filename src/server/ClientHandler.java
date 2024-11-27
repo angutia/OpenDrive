@@ -66,6 +66,8 @@ public class ClientHandler extends Thread{
                 if (!found) writer.println("ERROR FILE NOT FOUND");
                 else {
                     String response = reader.readLine(); //READ THE OK OR ERROR
+                    writer.write("OK"); 
+                    writer.flush();
                     if (!response.equalsIgnoreCase("OK")) {
                         //TODO better error handling?
                         System.err.println("[ClientHandler] Client sent error '" + response + "'");

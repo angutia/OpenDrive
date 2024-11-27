@@ -14,6 +14,7 @@ SERVIDOR: OK/ERROR <error>
 Conseguir cambios:
 ```
 CLIENTE: GET <nombre_archivo>
+SERVIDOR: OK/ERROR <error>
 SERVIDOR: <objeto de clase FileEvent>
 CLIENTE: OK/ERROR <error> #Notifica que ha acabado de actualizar el archivo
 ```

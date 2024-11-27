@@ -49,4 +49,8 @@ public class Client {
     public static int getServerPort  () {
         return serverPort;
     }
+    
+    public static void log(String line) {
+    	System.out.println(line);
+    }
 }

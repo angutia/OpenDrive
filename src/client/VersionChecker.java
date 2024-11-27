@@ -89,7 +89,7 @@ public class VersionChecker extends TimerTask{
             // Hacer un GET de cada archivo en files
             //TODO: solo hacer GET si es un archivo modificado por otro cliente
             for (String fName : files) {
-                getFileEvent(fName, out, ois);
+                getFileEvent(fName, out, ois, in);
             }
 
 
@@ -121,57 +121,63 @@ public class VersionChecker extends TimerTask{
         return !res.startsWith("ERROR");
     }
 
-    private void getFileEvent (String fName, PrintWriter out, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    private void getFileEvent (String fName, PrintWriter out, ObjectInputStream ois, BufferedReader reader) throws IOException, ClassNotFoundException {
         out.println("GET " + fName);
         out.flush();
+        String readOk = reader.readLine();
+        if (!readOk.equals("OK")) {
+        	Client.log("Server sent error: " + readOk);
+        	return;
+        }
 
         FileEvent fileEvent = (FileEvent) ois.readObject();
-        if (fileEvent instanceof FileModificationEvent) {
-            FileModificationEvent fileModificationEvent = (FileModificationEvent) fileEvent;
-            File [] fNameList = dir.listFiles((file,name)->name.equals(fName));
-            if (fNameList.length!=0) {
-                fNameList[0].delete();
-            }
-            Set<String> IPs = fileModificationEvent.getIps();
-            boolean modificationCompleted = false;
-            for (String IP : IPs) {
-                // Se conceta a otro cliente en IP
-                try (Socket clientSocket = new Socket(IP,6666);
-                PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
-                //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
-                InputStream is = clientSocket.getInputStream();
-                Scanner clientIn = new Scanner(is); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
-                FileOutputStream fos = new FileOutputStream(new File(dir,fName));
-                ){
-                    clientOut.println("GET " + fName);
-                    clientOut.flush();
-
-                    String res = clientIn.nextLine();
-                    if (res.startsWith("OK")) {
-                        byte [] buff = new byte[2048];
-                        int read = is.read(buff);
-                        while(read!=-1) {
-                            fos.write(buff, 0, read);
-                            read = is.read(buff, 0, read);
-                        }
-                        fos.flush();
-
-                        out.println("OK"); // Notifica al servidor de que ha actualizado el archivo
-                        modificationCompleted = true;
-                        break;
-                    } else {
-                        //Manejar el error
-                    }
-                    
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            // Si se ha recorrido IPs entero y no se ha actualizado el archivo, avisar
-            if (!modificationCompleted) {
-                out.println("ERROR");
-            }
-            out.flush();
+        if (!(fileEvent instanceof FileModificationEvent)) return;
+        
+        FileModificationEvent fileModificationEvent = (FileModificationEvent) fileEvent;
+        File [] fNameList = dir.listFiles((file,name)->name.equals(fName));
+        if (fNameList.length!=0) {
+            fNameList[0].delete();
         }
+        Set<String> IPs = fileModificationEvent.getIps();
+        boolean modificationCompleted = false;
+        for (String IP : IPs) {
+        	if (modificationCompleted) break;
+            // Se conecta a otro cliente en IP
+            try (Socket clientSocket = new Socket(IP,6666);
+            PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
+            //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
+            InputStream is = clientSocket.getInputStream();
+            Scanner clientIn = new Scanner(is); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
+            FileOutputStream fos = new FileOutputStream(new File(dir,fName));
+            ){
+                clientOut.println("GET " + fName);
+                clientOut.flush();
+
+                String res = clientIn.nextLine();
+                if (res.startsWith("OK")) {
+                    byte [] buff = new byte[2048];
+                    int read = is.read(buff);
+                    while(read!=-1) {
+                        fos.write(buff, 0, read);
+                        read = is.read(buff, 0, read);
+                    }
+                    fos.flush();
+
+                    out.println("OK"); // Notifica al servidor de que ha actualizado el archivo
+                    modificationCompleted = true;
+                } else {
+                    //Manejar el error
+                }
+                
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        // Si se ha recorrido IPs entero y no se ha actualizado el archivo, avisar
+        if (!modificationCompleted) {
+            out.println("ERROR");
+        }
+        out.flush();
+        
     }
 }
