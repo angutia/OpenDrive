@@ -30,8 +30,8 @@ public class Client {
 		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(new VersionChecker(dirRoute), init.getTime(), refreshRate);
 		
-		gui = new ConfigGUI();
 		ConfigGUI.setLookAndFeel();
+		gui = new ConfigGUI();
 		gui.setVisible(true);
         log("Finished client startup.");
         try (ServerSocket clientServerSocket = new ServerSocket(6666)) {
