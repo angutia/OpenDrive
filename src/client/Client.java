@@ -152,7 +152,7 @@ public class Client {
     }
     
     public static void log(String line) {
-    	System.out.println(line);
-    	gui.addLog(line);
+    	System.out.println(Calendar.getInstance().getTime() + " " + line);
+    	gui.addLog(Calendar.getInstance().getTime() + " " + line);
     }
 }
