@@ -15,6 +15,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,6 +31,7 @@ public class Client {
     public static int serverPort = 8000;
     
     private static Timer timer;
+    private static TimerTask task;
     private static ConfigGUI gui;
 
     private static ExecutorService pool = Executors.newCachedThreadPool();
@@ -48,7 +50,7 @@ public class Client {
 		gui.setVisible(true);
 		
 		timer = new Timer();
-		timer.scheduleAtFixedRate(new VersionChecker(dirRoute), init.getTime(), refreshRate);
+		recreateTimerTask();
 		
 		
         log("Finished client startup.");
@@ -70,6 +72,8 @@ public class Client {
             e.printStackTrace();
         } finally {
             pool.shutdown();
+            timer.cancel();
+            task.cancel();
         }
         log("Exited");
     }
@@ -124,18 +128,24 @@ public class Client {
         }
     }
     
-    public static String getServerHost  () {
+    public static String getServerHost() {
         return serverHost;
     }
 
-    public static int getServerPort  () {
+    public static int getServerPort() {
         return serverPort;
     }
     
     public static void setRefreshRate(long rate) {
     	refreshRate = rate;
-    	timer.cancel();
-    	timer.scheduleAtFixedRate(new VersionChecker(dirRoute), Calendar.getInstance().getTime(), rate);
+    	recreateTimerTask();
+    }
+    
+    private static void recreateTimerTask() {
+    	//timer.cancel();
+    	if (task!=null) task.cancel();
+    	task = new VersionChecker(dirRoute);
+      	timer.scheduleAtFixedRate(task, Calendar.getInstance().getTime(), refreshRate);
     }
     
     public static long getRefreshRate() {
