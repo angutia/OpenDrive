@@ -28,19 +28,6 @@ public class FileModificationEvent extends FileEvent{
     }
 
 
-    /** TODO: NECESITAMOS ESTO?
-     * Two files are considered "equal" if their names are the same
-     * @param obj The object to be compared with this abstract pathname
-     *
-     * @return true if this.name==(File) obj.name, false otherwise
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof FileModificationEvent) {
-            return this.getName().equals(((FileModificationEvent) obj).getName());
-        }
-        return false;
-    }
 
     @Override
     public String toString() {

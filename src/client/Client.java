@@ -41,7 +41,6 @@ public class Client {
     public static void main (String [] args) {
         dirRoute = "E:\\Prueba OpenDrive";
         refreshRate=30000;
-		Calendar init = Calendar.getInstance();
 		
 		setupTray();
 		

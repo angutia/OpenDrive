@@ -37,7 +37,7 @@ public class ClientServer implements Runnable{
             if (message.matches("^GET .*")) {
                 String fName = message.split(" ")[1];
                 File [] fNameList = dir.listFiles((file,name)->name.equals(fName));
-                //TODO si fNameList==null la hemos liado
+                //TODO si fNameList==null la hemos liado, no tenemos el archivo pedido
                 if (fNameList.length!=0) {
                     File file = fNameList[0];
                     fis = new FileInputStream(file);
@@ -55,7 +55,7 @@ public class ClientServer implements Runnable{
 
                     fis.close();
                 } else {
-                    out.println("ERROR");
+                    out.println("ERROR FILE NOT FOUND");
                     out.flush();
                 }
             }

@@ -9,7 +9,7 @@ import java.util.Set;
 
 /**
  * Collects and stores file uploads
- * TODO: DELETE A FILE
+ * 
  */
 public class UpdateLog {
 

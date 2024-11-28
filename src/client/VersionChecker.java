@@ -37,12 +37,16 @@ public class VersionChecker extends TimerTask{
             fileRegister.put(file.getName(), file.lastModified());
         }
     }
+    
+    public synchronized long getFile(String name) {
+    	return fileRegister.getOrDefault(name, -1L);
+    }
 
     @Override
     public void run() {
         dir = new File(dirRoute);
         List<String> files = new ArrayList<>(Arrays.asList(dir.list()));
-
+        
         // Lo primero es pedir al servidor la última actualización de todos los archivos de la carpeta
         try (Socket socket = new Socket(Client.getServerHost(), Client.getServerPort());
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -70,12 +74,20 @@ public class VersionChecker extends TimerTask{
                             // Hacer un GET y conseguir el archivo
                         }
                     } else { // En el caso de que no exista el archivo en la carpeta Cliente
-                        // ¿Cómo se sabe si lo tengo que crear porque no lo tenía (GET) o lo he borrado y tengo que avisar del borrado (PUSH)?
-
-                        // Hacer un GET y conseguir el archivo
-                        files.add(fName);
-
-                        // Hacer un PUSH y avisar del borrado
+                        long lastDate = getFile(fName);
+                    	if (lastDate == -1L) {
+                    		// El archivo no estaba en la carpeta
+                    		
+                    		// Hacer un GET y conseguir el archivo
+                            files.add(fName);
+                    	} else {
+                    		// El archivo estaba antes en la carpeta, y ahora ya no!!
+                    		// Eso es que lo ha borrado el cliente.
+                    		
+                    		//TODO: notificar el borrado despues del GETALL
+                    		notifyDelete(fName, lastDate, in, out, oos, ois);
+                    		
+                    	}
                     }                    
                 } else if (res.startsWith("DELETION")) {
                     if (files.remove(fName)) { // En el caso de que exista en la carpeta Cliente el archivo que ha sido borrado
@@ -95,9 +107,10 @@ public class VersionChecker extends TimerTask{
             }
 
 
-
+            //Antes de acabar, actualizamos el registro de archivos
+            updateFileRegister();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            Client.log(e.getLocalizedMessage());
         }
     }
 
@@ -149,13 +162,14 @@ public class VersionChecker extends TimerTask{
             PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
             //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
             InputStream is = clientSocket.getInputStream();
-            DataInputStream clientIn = new DataInputStream(is); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
+            DataInputStream clientIn = new DataInputStream(is); 
             FileOutputStream fos = new FileOutputStream(new File(dir,fName));
             ){
                 clientOut.println("GET " + fName);
                 clientOut.flush();
 
-                String res = clientIn.readLine();
+                @SuppressWarnings("deprecation")
+				String res = clientIn.readLine();
                 if (res.startsWith("OK")) {
                     byte [] buff = new byte[2048];
                     int read = is.read(buff);
