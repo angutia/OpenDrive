@@ -2,6 +2,7 @@ package client.gui;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JTextField;
 import javax.swing.JButton;
@@ -198,7 +199,10 @@ public class ConfigGUI extends JFrame {
 		txtLog.setEditable(false);
 		txtLog.setFont(new Font("Monospaced", Font.PLAIN, 14));
 		txtLog.setText("1s: Obtenido registro del servidor\r\n5s: Obteniendo archivo de cliente 1.1.1.1\r\n10s: Finalizada actualización\r\n");
-		panelLog.add(txtLog);
+
+		JScrollPane logScrollPane = new JScrollPane(txtLog);
+		
+		panelLog.add(logScrollPane);
 		
 		//this.pack();
 	}

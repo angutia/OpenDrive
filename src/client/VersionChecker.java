@@ -62,13 +62,16 @@ public class VersionChecker extends TimerTask{
             out.flush();
             String res = in.readLine();
 
-            // Para cada actualización, comprobar si es una modificación o un borrado
+            // Primero leemos todas las líneas del GETALL
             while (res!=null && !res.startsWith("END")) {
             	serverFiles.add(res);
                 
                 res = in.readLine();
             }
-            
+            // Para cada actualización, comprobar si es una modificación o un borrado.
+            // Cada vez que hacemos una operación sobre un fichero, la borramos de la 
+            // lista files. Así sabremos si hay algún archivo sobre el que no hemos 
+            // sido notificados.
             for(String line : serverFiles) {
             	String fName = line.split(" ")[1];
                 File [] fNameList = dir.listFiles((file,name)->name.equals(fName));              
@@ -77,12 +80,14 @@ public class VersionChecker extends TimerTask{
                         long lastModifiedClient = fNameList[0].lastModified();
                         long lastModifiedServer = Long.parseLong(line.split(" ")[2]);
                         if (lastModifiedServer<lastModifiedClient) { // Si el archivo del Cliente es una versión más nueva que la del Servidor
-                            files.remove(fName);
+                            Client.log("El archivo " + fName + " es más nuevo que el servidor. Mandando actualización.");
                             notifyModification(fName, lastModifiedClient, in, out, oos);
                         } else if (lastModifiedServer>lastModifiedClient){ // Si el archivo es una versión más vieja que la del Servidor
                             // Hacer un GET y conseguir el archivo
                         	getFileEvent(fName, out, ois, in);
                         }
+                        //Si no hemos entrado al if, es porque tenemos la versión más reciente.
+                        files.remove(fName);
                     } else { // En el caso de que no exista el archivo en la carpeta Cliente
                         long lastDate = getFile(fName);
                     	if (lastDate == -1L) {
@@ -93,7 +98,7 @@ public class VersionChecker extends TimerTask{
                     	} else {
                     		// El archivo estaba antes en la carpeta, y ahora ya no!!
                     		// Eso es que lo ha borrado el cliente.
-                    		
+                    		Client.log("Detectado borrado de archivo " + fName + ". Notificando al servidor.");
                     		notifyDelete(fName, lastDate, in, out, oos, ois);
                     		
                     	}
@@ -107,6 +112,13 @@ public class VersionChecker extends TimerTask{
                     } 
                 }
             }
+            for (String notUpdatedFile : files) {
+            	//Aqui notUpdatedFile es un archivo que no hemos recibido del servidor pero que tenemos
+            	File ourFile = dir.listFiles((file,name)->name.equals(notUpdatedFile))[0];
+            	Client.log("Añadiendo archivo " + notUpdatedFile + " al servidor.");
+            	notifyModification(notUpdatedFile, ourFile.lastModified(), in, out, oos);
+            	
+            }
             
 
             //Antes de acabar, actualizamos el registro de archivos
@@ -114,6 +126,7 @@ public class VersionChecker extends TimerTask{
         } catch (IOException | ClassNotFoundException e) {
             Client.log(e.getLocalizedMessage());
         }
+        Client.log("Finalizada actualización periódica.");
     }
 
     private boolean notifyModification (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos) throws IOException {

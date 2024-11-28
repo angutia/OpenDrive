@@ -17,7 +17,7 @@ public class Server {
     public static void main(String[] args) {
         Scanner k = new Scanner(System.in);
         ClientAcceptor a = new ClientAcceptor();
-        System.out.println("Starting listening on port 8000.");
+        //System.out.println("Starting listening on port 8000.");
         pool.submit(a);
         System.out.println("Started listening on port 8000");
         String sel;
