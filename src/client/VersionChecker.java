@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,9 @@ public class VersionChecker extends TimerTask{
         dir = new File(dirRoute);
         List<String> files = new ArrayList<>(Arrays.asList(dir.list()));
         
+        List<String> serverFiles = new ArrayList<>();
+        
+        Client.log("Ejecutando actualización periódica.");
         // Lo primero es pedir al servidor la última actualización de todos los archivos de la carpeta
         try (Socket socket = new Socket(Client.getServerHost(), Client.getServerPort());
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -59,33 +63,53 @@ public class VersionChecker extends TimerTask{
             out.flush();
             String res = in.readLine();
 
-            // Para cada actualización, comprobar si es una modificación o un borrado
+            // Primero leemos todas las líneas del GETALL
             while (res!=null && !res.startsWith("END")) {
-                String fName = res.split(" ")[1];
+            	serverFiles.add(res);
+                
+                res = in.readLine();
+            }
+            // Para cada actualización, comprobar si es una modificación o un borrado.
+            // Cada vez que hacemos una operación sobre un fichero, la borramos de la 
+            // lista files. Así sabremos si hay algún archivo sobre el que no hemos 
+            // sido notificados.
+            for(String line : serverFiles) {
+            	String fName = line.split(" ")[1];
                 File [] fNameList = dir.listFiles((file,name)->name.equals(fName));              
-                if (res.startsWith("MODIFICATION")) {
+                if (line.startsWith("MODIFICATION")) {
                     if (files.contains(fName)) { // En el caso de que ya exista el archivo en la carpeta Cliente
                         long lastModifiedClient = fNameList[0].lastModified();
-                        long lastModifiedServer = Long.parseLong(res.split(" ")[2]);
+                        long lastModifiedServer = Long.parseLong(line.split(" ")[2]);
                         if (lastModifiedServer<lastModifiedClient) { // Si el archivo del Cliente es una versión más nueva que la del Servidor
-                            files.remove(fName);
+                            Client.log("El archivo " + fName + " es más nuevo que el servidor. Mandando actualización.");
                             notifyModification(fName, lastModifiedClient, in, out, oos);
                         } else if (lastModifiedServer>lastModifiedClient){ // Si el archivo es una versión más vieja que la del Servidor
                             // Hacer un GET y conseguir el archivo
+                        	getFileEvent(fName, out, ois, in);
                         }
+                        //Si no hemos entrado al if, es porque tenemos la versión más reciente.
+                        files.remove(fName);
                     } else { // En el caso de que no exista el archivo en la carpeta Cliente
                         long lastDate = getFile(fName);
                     	if (lastDate == -1L) {
                     		// El archivo no estaba en la carpeta
                     		
                     		// Hacer un GET y conseguir el archivo
-                            files.add(fName);
+                            getFileEvent(fName, out, ois, in);
                     	} else {
                     		// El archivo estaba antes en la carpeta, y ahora ya no!!
                     		// Eso es que lo ha borrado el cliente.
+                    		Client.log("Detectado borrado de archivo " + fName + ". Notificando al servidor.");
                     		
-                    		//TODO: notificar el borrado despues del GETALL
-                    		notifyDelete(fName, lastDate, in, out, oos, ois);
+                    		//Usamos getTimeInMillis porque asumimos que se ha borrado ahora
+                    		//TODO: ESTO NO FUNCIONA PARA RENOMBRAR ARCHIVOS:
+                    		//      t=0 crear hola.txt -> t=1 renombrar a hola2.txt -> t=2 renombrar a hola.txt
+                    		//      ERROR! hola.txt está borrado en t=1 pero la fecha de modificación es t=0,
+                    		//      luego no se actualizará.
+                    		//
+                    		// Posible solución: hacer que el servidor permita cualquier MODIFY después de un DELETE
+                    		// aunque hay que pensarlo bien para no liarla en otros casos.
+                    		notifyDelete(fName, Calendar.getInstance().getTimeInMillis(), in, out, oos, ois);
                     		
                     	}
                     }                    
@@ -97,21 +121,22 @@ public class VersionChecker extends TimerTask{
                         // En principio nada, el archivo ha sido borrado pero no estaba en la carpeta del cliente así que se queda igual
                     } 
                 }
-                res = in.readLine();
+            }
+            for (String notUpdatedFile : files) {
+            	//Aqui notUpdatedFile es un archivo que no hemos recibido del servidor pero que tenemos
+            	File ourFile = dir.listFiles((file,name)->name.equals(notUpdatedFile))[0];
+            	Client.log("Añadiendo archivo " + notUpdatedFile + " al servidor.");
+            	notifyModification(notUpdatedFile, ourFile.lastModified(), in, out, oos);
+            	
             }
             
-            // Hacer un GET de cada archivo en files
-            //TODO: solo hacer GET si es un archivo modificado por otro cliente
-            for (String fName : files) {
-                getFileEvent(fName, out, ois, in);
-            }
-
 
             //Antes de acabar, actualizamos el registro de archivos
             updateFileRegister();
         } catch (IOException | ClassNotFoundException e) {
             Client.log(e.getLocalizedMessage());
         }
+        Client.log("Finalizada actualización periódica.");
     }
 
     private boolean notifyModification (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos) throws IOException {
@@ -133,6 +158,7 @@ public class VersionChecker extends TimerTask{
         oos.flush();
 
         String res = in.readLine();
+        Client.log("Server sent after deletion: " + res);
         return !res.startsWith("ERROR");
     }
 

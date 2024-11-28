@@ -46,7 +46,7 @@ public class ClientHandler extends Thread{
     }
 
     public void handleClient() throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(this.client.getInputStream(), StandardCharsets.UTF_8));
+        DataInputStream reader = new DataInputStream(this.client.getInputStream()); //To not buffer the lines
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(this.client.getOutputStream(), StandardCharsets.UTF_8));
         ObjectInputStream ois = new ObjectInputStream(this.client.getInputStream());
         ObjectOutputStream oos = new ObjectOutputStream(this.client.getOutputStream());
@@ -78,6 +78,7 @@ public class ClientHandler extends Thread{
             } else if (read.matches("^PUSH$")) {
                 try {
                     FileEvent event = (FileEvent) ois.readObject();
+                    System.out.println("Received push: " + event);
                     long lastTime = Server.log.pushUpdate(event, this.client.getInetAddress().getHostAddress());
 
                     writer.println((lastTime > event.getTime()) ? "ERROR NEWER VERSION AVAILABLE" : "OK");
