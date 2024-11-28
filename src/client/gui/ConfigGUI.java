@@ -61,7 +61,7 @@ public class ConfigGUI extends JFrame {
 	 */
 	public ConfigGUI() {
 		setTitle("OpenDrive client");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 543, 219);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
