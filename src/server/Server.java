@@ -3,6 +3,7 @@ package server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,6 +42,9 @@ public class Server {
                     try {
                         Socket client1 = server.accept();
                         pool.submit(new ClientHandler(client1));
+                    }
+                    catch (SocketTimeoutException ex) {
+                    	
                     }
                     catch (IOException e) {
                         System.out.println("[SERVER THREAD] Error while handling client");
