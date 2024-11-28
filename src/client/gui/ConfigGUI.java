@@ -56,7 +56,6 @@ public class ConfigGUI extends JFrame {
 	 */
 	public ConfigGUI() {
 		setTitle("OpenDrive client");
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 543, 219);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -160,7 +159,7 @@ public class ConfigGUI extends JFrame {
 		
 		spinner.setEditor(new JSpinner.NumberEditor(spinner, "0"));
 		
-		spinner.setValue(Client.refreshRate/1000);
+		spinner.setValue(Client.getRefreshRate()/1000);
 
 		GridBagConstraints gbc_spinner = new GridBagConstraints();
 		gbc_spinner.fill = GridBagConstraints.HORIZONTAL;
@@ -173,8 +172,8 @@ public class ConfigGUI extends JFrame {
 		btnAplicar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Client.dirRoute=txtPath.getText();
-				Client.refreshRate = (int) spinner.getModel().getValue()* 1000;
-				Client.log("dirRoute: " + Client.dirRoute + "\t refreshRate: " + Client.refreshRate);
+				Client.setRefreshRate((int) spinner.getModel().getValue()* 1000);
+				Client.log("dirRoute: " + Client.dirRoute + "\t refreshRate: " + Client.getRefreshRate());
 			}
 		});
 		
