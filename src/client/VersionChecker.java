@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,16 @@ public class VersionChecker extends TimerTask{
                     		// El archivo estaba antes en la carpeta, y ahora ya no!!
                     		// Eso es que lo ha borrado el cliente.
                     		Client.log("Detectado borrado de archivo " + fName + ". Notificando al servidor.");
-                    		notifyDelete(fName, lastDate, in, out, oos, ois);
+                    		
+                    		//Usamos getTimeInMillis porque asumimos que se ha borrado ahora
+                    		//TODO: ESTO NO FUNCIONA PARA RENOMBRAR ARCHIVOS:
+                    		//      t=0 crear hola.txt -> t=1 renombrar a hola2.txt -> t=2 renombrar a hola.txt
+                    		//      ERROR! hola.txt está borrado en t=1 pero la fecha de modificación es t=0,
+                    		//      luego no se actualizará.
+                    		//
+                    		// Posible solución: hacer que el servidor permita cualquier MODIFY después de un DELETE
+                    		// aunque hay que pensarlo bien para no liarla en otros casos.
+                    		notifyDelete(fName, Calendar.getInstance().getTimeInMillis(), in, out, oos, ois);
                     		
                     	}
                     }                    
@@ -148,6 +158,7 @@ public class VersionChecker extends TimerTask{
         oos.flush();
 
         String res = in.readLine();
+        Client.log("Server sent after deletion: " + res);
         return !res.startsWith("ERROR");
     }
 
