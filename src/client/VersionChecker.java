@@ -1,6 +1,7 @@
 package client;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +41,7 @@ public class VersionChecker extends TimerTask{
     @Override
     public void run() {
         dir = new File(dirRoute);
-        List<String> files = Arrays.asList(dir.list());
+        List<String> files = new ArrayList<>(Arrays.asList(dir.list()));
 
         // Lo primero es pedir al servidor la última actualización de todos los archivos de la carpeta
         try (Socket socket = new Socket(Client.getServerHost(), Client.getServerPort());
@@ -147,13 +149,13 @@ public class VersionChecker extends TimerTask{
             PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
             //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
             InputStream is = clientSocket.getInputStream();
-            Scanner clientIn = new Scanner(is); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
+            DataInputStream clientIn = new DataInputStream(is); // Un Scanner para poder leer una línea sin guardar en un buffer más bytes de lo deseado
             FileOutputStream fos = new FileOutputStream(new File(dir,fName));
             ){
                 clientOut.println("GET " + fName);
                 clientOut.flush();
 
-                String res = clientIn.nextLine();
+                String res = clientIn.readLine();
                 if (res.startsWith("OK")) {
                     byte [] buff = new byte[2048];
                     int read = is.read(buff);

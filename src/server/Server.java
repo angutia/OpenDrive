@@ -30,7 +30,7 @@ public class Server {
         } while (!sel.equalsIgnoreCase("2"));
         //TODO cerrar el thread
         System.out.println("Apagado servidor. Saliendo.");
-        pool.shutdown();
+        pool.shutdownNow();
     }
     public static class ClientAcceptor extends Thread {
         private ServerSocket server = null;
@@ -38,7 +38,7 @@ public class Server {
             try {
                 server = new ServerSocket(8000);
                 server.setSoTimeout(10*1000);
-                while (!this.server.isClosed()) {
+                while (!Thread.interrupted()) {
                     try {
                         Socket client1 = server.accept();
                         pool.submit(new ClientHandler(client1));

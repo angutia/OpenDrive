@@ -40,13 +40,9 @@ public class ClientHandler extends Thread{
         }
         writer.println("END");
     }
-
-    public boolean writeFile(ObjectOutputStream oos, String file) throws IOException {
-        FileEvent tosend = Server.log.getFileEventByName(file);
-        if (tosend == null) return false;
+    public void writeFile(FileEvent tosend, ObjectOutputStream oos) throws IOException {
         oos.writeObject(tosend);
         oos.flush();
-        return true;
     }
 
     public void handleClient() throws IOException {
@@ -62,12 +58,15 @@ public class ClientHandler extends Thread{
             }
             else if (read.matches("^GET .*")) {
                 String sendStr = read.replace("GET ", "");
-                boolean found = this.writeFile(oos, sendStr);
-                if (!found) writer.println("ERROR FILE NOT FOUND");
+                FileEvent tosend = Server.log.getFileEventByName(sendStr);
+                if (tosend==null) writer.println("ERROR FILE NOT FOUND");
                 else {
-                    String response = reader.readLine(); //READ THE OK OR ERROR
-                    writer.write("OK"); 
+                	writer.println("OK"); 
                     writer.flush();
+                    
+                    this.writeFile(tosend, oos);
+                    String response = reader.readLine(); //READ THE OK OR ERROR
+                    
                     if (!response.equalsIgnoreCase("OK")) {
                         //TODO better error handling?
                         System.err.println("[ClientHandler] Client sent error '" + response + "'");

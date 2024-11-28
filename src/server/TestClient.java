@@ -6,6 +6,7 @@ import utils.FileModificationEvent;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
 
 public class TestClient {
     public static void main(String[] args) {
@@ -18,12 +19,13 @@ public class TestClient {
             s = new Socket("localhost", 8000);
             w = new PrintWriter(new OutputStreamWriter(s.getOutputStream(), "UTF-8"));
             r = new BufferedReader(new InputStreamReader(s.getInputStream(), "UTF-8"));
+            DataInputStream sc = new DataInputStream(s.getInputStream()); //leer el OK
             //-------------------
             // ESTE ORDEN IMPORTA
             oos = new ObjectOutputStream(s.getOutputStream());
             ois = new ObjectInputStream(s.getInputStream());
             //-------------------
-            long unixTime = System.currentTimeMillis() / 1000L;
+            long unixTime = System.currentTimeMillis();
 
             //EJEMPLO: mandar un push
             w.println("PUSH");
@@ -42,6 +44,8 @@ public class TestClient {
             //EJEMPLO: hacer un get
             w.println("GET hola.txt");
             w.flush();
+            read = sc.readLine();
+            System.out.println("SERVER: " + read);
             try {
                 FileEvent event = (FileEvent) ois.readObject();
                 System.out.println("EVENTO: " + event);
