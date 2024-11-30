@@ -46,6 +46,8 @@ public class VersionChecker extends TimerTask{
     @Override
     public void run() {
         dir = new File(dirRoute);
+        if (!dir.isDirectory()) Client.log("Imposible acceder al directorio en la ruta especificada.");
+        
         List<String> currentFiles = new ArrayList<>(Arrays.asList(dir.list()));
         
         List<String> serverFiles = new ArrayList<>();
