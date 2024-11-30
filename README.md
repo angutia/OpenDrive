@@ -1,7 +1,7 @@
 ## Diseño específico
 * Por diseño, el cliente siempre pide actualizaciones antes de mandar las suyas.
 * Puerto servidor 8000
-* Puerto cliente 66666
+* Puerto cliente 6666
 * El cliente guarda un historial de los archivos que tenía en la última actualización.
 * Antes de cerrar el cliente, se actualiza una última vez.
 ## Especificación de protocolo cliente - servidor
@@ -42,8 +42,6 @@ SERVIDOR: OK/ERROR <error>
 Conseguir un archivo:
 ```
 CLIENTE 1: GET <nombre_archivo>
-CLIENTE 2: OK
+CLIENTE 2: OK/ERROR <error> #En caso de no tener el archivo, por ejemplo
 CLIENTE 2: <bytes_archivo>
-
-CLIENTE 2: ERROR <error> #En caso de no tener el archivo, por ejemplo
 ```

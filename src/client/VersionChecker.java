@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -17,7 +18,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TimerTask;
 import utils.FileDeletionEvent;
@@ -46,18 +46,17 @@ public class VersionChecker extends TimerTask{
     @Override
     public void run() {
         dir = new File(dirRoute);
-        List<String> files = new ArrayList<>(Arrays.asList(dir.list()));
+        List<String> currentFiles = new ArrayList<>(Arrays.asList(dir.list()));
         
         List<String> serverFiles = new ArrayList<>();
         
         Client.log("Ejecutando actualización periódica.");
         // Lo primero es pedir al servidor la última actualización de todos los archivos de la carpeta
         try (Socket socket = new Socket(Client.getServerHost(), Client.getServerPort());
+        InputStream is = socket.getInputStream();
+        OutputStream os = socket.getOutputStream();
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         PrintWriter out = new PrintWriter(socket.getOutputStream());
-        // ESTE ORDEN IMPORTA
-        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         ){
             out.println("GETALL");
             out.flush();
@@ -77,25 +76,26 @@ public class VersionChecker extends TimerTask{
             	String fName = line.split(" ")[1];
                 File [] fNameList = dir.listFiles((file,name)->name.equals(fName));              
                 if (line.startsWith("MODIFICATION")) {
-                    if (files.contains(fName)) { // En el caso de que ya exista el archivo en la carpeta Cliente
+                    if (currentFiles.contains(fName)) { // En el caso de que ya exista el archivo en la carpeta Cliente
                         long lastModifiedClient = fNameList[0].lastModified();
                         long lastModifiedServer = Long.parseLong(line.split(" ")[2]);
                         if (lastModifiedServer<lastModifiedClient) { // Si el archivo del Cliente es una versión más nueva que la del Servidor
-                            Client.log("El archivo " + fName + " es más nuevo que el servidor. Mandando actualización.");
-                            notifyModification(fName, lastModifiedClient, in, out, oos);
+                            Client.log("El archivo " + fName + " es más nuevo que en el servidor. Mandando actualización.");
+                            notifyModification(fName, lastModifiedClient, os, is);
                         } else if (lastModifiedServer>lastModifiedClient){ // Si el archivo es una versión más vieja que la del Servidor
                             // Hacer un GET y conseguir el archivo
-                        	getFileEvent(fName, out, ois, in);
+                            Client.log("El archivo " + fName + " es más antiguo que en el servidor. Obteniendo actualización.");
+                        	getFileEvent(fName, os, is);
                         }
                         //Si no hemos entrado al if, es porque tenemos la versión más reciente.
-                        files.remove(fName);
+                        currentFiles.remove(fName);
                     } else { // En el caso de que no exista el archivo en la carpeta Cliente
                         long lastDate = getFile(fName);
                     	if (lastDate == -1L) {
                     		// El archivo no estaba en la carpeta
-                    		
+                    		Client.log("El archivo " + fName + " es nuevo. Obteniendo archivo.");
                     		// Hacer un GET y conseguir el archivo
-                            getFileEvent(fName, out, ois, in);
+                            getFileEvent(fName, os, is);
                     	} else {
                     		// El archivo estaba antes en la carpeta, y ahora ya no!!
                     		// Eso es que lo ha borrado el cliente.
@@ -109,25 +109,24 @@ public class VersionChecker extends TimerTask{
                     		//
                     		// Posible solución: hacer que el servidor permita cualquier MODIFY después de un DELETE
                     		// aunque hay que pensarlo bien para no liarla en otros casos.
-                    		notifyDelete(fName, Calendar.getInstance().getTimeInMillis(), in, out, oos, ois);
-                    		
+                    		notifyDelete(fName, Calendar.getInstance().getTimeInMillis(), os, is);
                     	}
                     }                    
                 } else if (res.startsWith("DELETION")) {
-                    if (files.remove(fName)) { // En el caso de que exista en la carpeta Cliente el archivo que ha sido borrado
+                    if (currentFiles.remove(fName)) { // En el caso de que exista en la carpeta Cliente el archivo que ha sido borrado
                         // Manejar el borrado
+                        Client.log("Borrando el archivo " + fName);
                         fNameList[0].delete();
                     } else {
                         // En principio nada, el archivo ha sido borrado pero no estaba en la carpeta del cliente así que se queda igual
                     } 
                 }
             }
-            for (String notUpdatedFile : files) {
+            for (String notUpdatedFile : currentFiles) {
             	//Aqui notUpdatedFile es un archivo que no hemos recibido del servidor pero que tenemos
             	File ourFile = dir.listFiles((file,name)->name.equals(notUpdatedFile))[0];
             	Client.log("Añadiendo archivo " + notUpdatedFile + " al servidor.");
-            	notifyModification(notUpdatedFile, ourFile.lastModified(), in, out, oos);
-            	
+            	notifyModification(notUpdatedFile, ourFile.lastModified(), os, is);
             }
             
 
@@ -139,7 +138,11 @@ public class VersionChecker extends TimerTask{
         Client.log("Finalizada actualización periódica.");
     }
 
-    private boolean notifyModification (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos) throws IOException {
+    private void notifyModification (String fileName, long lastModified, OutputStream os, InputStream is) throws IOException {
+        PrintWriter out = new PrintWriter(os);
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        
         FileEvent fileModification = new FileModificationEvent(fileName, lastModified);
         out.println("PUSH");
         out.flush();
@@ -147,10 +150,18 @@ public class VersionChecker extends TimerTask{
         oos.flush();
 
         String res = in.readLine();
-        return !res.startsWith("ERROR");
+        if (res.startsWith("ERROR")) {
+            Client.log("Error al notificar al servidor de la modificación del archivo " + fileName + ": " + res);
+        } else {
+            Client.log("Servidor notificado de la modificación del archivo " + fileName);
+        }
     }
 
-    private boolean notifyDelete (String fileName, long lastModified, BufferedReader in, PrintWriter out, ObjectOutputStream oos, ObjectInputStream ois) throws IOException {
+    private void notifyDelete (String fileName, long lastModified, OutputStream os, InputStream is) throws IOException {
+        PrintWriter out = new PrintWriter(os);
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        
         FileEvent fileModification = new FileDeletionEvent(fileName, lastModified);
         out.println("PUSH");
         out.flush();
@@ -158,21 +169,33 @@ public class VersionChecker extends TimerTask{
         oos.flush();
 
         String res = in.readLine();
-        Client.log("Server sent after deletion: " + res);
-        return !res.startsWith("ERROR");
+        if (res.startsWith("ERROR")) {
+            Client.log("Error al notificar al servidor del borrado del archivo " + fileName + ": " + res);
+        } else {
+            Client.log("Servidor notificado del borrado del archivo " + fileName);
+        }
     }
 
-    private void getFileEvent (String fName, PrintWriter out, ObjectInputStream ois, BufferedReader reader) throws IOException, ClassNotFoundException {
+    private void getFileEvent (String fName, OutputStream os, InputStream is) throws IOException, ClassNotFoundException {
+        PrintWriter out = new PrintWriter(os);
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        ObjectInputStream ois = new ObjectInputStream(is);
+        
         out.println("GET " + fName);
         out.flush();
-        String readOk = reader.readLine();
+        String readOk = in.readLine();
         if (!readOk.equals("OK")) {
-        	Client.log("Server sent error: " + readOk);
+            Client.log("Error al obtener del servidor la modificación del archivo " + fName + ": " + readOk);
         	return;
         }
 
         FileEvent fileEvent = (FileEvent) ois.readObject();
-        if (!(fileEvent instanceof FileModificationEvent)) return;
+        // ¿En qué caso no sería un modification event?
+        // Porque siempre que se llama a este método es desde una modificación del getall
+        if (!(fileEvent instanceof FileModificationEvent)) {
+            Client.log("El archivo ha sido borrado del servidor");
+            return;
+        }
         
         FileModificationEvent fileModificationEvent = (FileModificationEvent) fileEvent;
         File [] fNameList = dir.listFiles((file,name)->name.equals(fName));
@@ -186,9 +209,8 @@ public class VersionChecker extends TimerTask{
             // Se conecta a otro cliente en IP
             try (Socket clientSocket = new Socket(IP,6666);
             PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
-            //DataInputStream clientIn = new DataInputStream(clientSocket.getInputStream());
-            InputStream is = clientSocket.getInputStream();
-            DataInputStream clientIn = new DataInputStream(is); 
+            InputStream clientIs = clientSocket.getInputStream();
+            DataInputStream clientIn = new DataInputStream(clientIs); 
             FileOutputStream fos = new FileOutputStream(new File(dir,fName));
             ){
                 clientOut.println("GET " + fName);
@@ -198,25 +220,27 @@ public class VersionChecker extends TimerTask{
 				String res = clientIn.readLine();
                 if (res.startsWith("OK")) {
                     byte [] buff = new byte[2048];
-                    int read = is.read(buff);
+                    int read = clientIs.read(buff);
                     while(read!=-1) {
                         fos.write(buff, 0, read);
-                        read = is.read(buff, 0, read);
+                        read = clientIs.read(buff, 0, read);
                     }
                     fos.flush();
 
+                    Client.log("Archivo " + fName + " actualizado correctamente desde el cliente " + IP);
                     out.println("OK"); // Notifica al servidor de que ha actualizado el archivo
                     modificationCompleted = true;
                 } else {
-                    //Manejar el error
+                    Client.log("Error al obtener el archivo " + fName + " del cliente " + IP + ": " + res);
                 }
                 
             } catch (IOException e) {
-                e.printStackTrace();
+                Client.log(e.getLocalizedMessage());
             }
         }
         // Si se ha recorrido IPs entero y no se ha actualizado el archivo, avisar
         if (!modificationCompleted) {
+            Client.log("Imposible obtener el archivo " + fName + " de ninguno de los clientes proporcionados por el servidor.");
             out.println("ERROR");
         }
         out.flush();
