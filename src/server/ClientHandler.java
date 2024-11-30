@@ -48,11 +48,11 @@ public class ClientHandler extends Thread{
     public void handleClient() throws IOException {
         DataInputStream reader = new DataInputStream(this.client.getInputStream()); //To not buffer the lines
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(this.client.getOutputStream(), StandardCharsets.UTF_8));
-        ObjectInputStream ois = new ObjectInputStream(this.client.getInputStream());
         ObjectOutputStream oos = new ObjectOutputStream(this.client.getOutputStream());
+        ObjectInputStream ois = new ObjectInputStream(this.client.getInputStream());
+        
         String read;
         while(!(read = reader.readLine()).matches("EXIT")) {
-
             if (read.matches("^GETALL$")) {
                 this.writeAllFiles(writer);
             }

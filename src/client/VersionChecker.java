@@ -47,7 +47,7 @@ public class VersionChecker extends TimerTask{
     public void run() {
         dir = new File(dirRoute);
         if (!dir.isDirectory()) Client.log("Imposible acceder al directorio en la ruta especificada.");
-        
+
         List<String> currentFiles = new ArrayList<>(Arrays.asList(dir.list()));
         
         List<String> serverFiles = new ArrayList<>();
@@ -59,6 +59,9 @@ public class VersionChecker extends TimerTask{
         OutputStream os = socket.getOutputStream();
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         PrintWriter out = new PrintWriter(socket.getOutputStream());
+        // El orden importa
+        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         ){
             out.println("GETALL");
             out.flush();
@@ -83,11 +86,11 @@ public class VersionChecker extends TimerTask{
                         long lastModifiedServer = Long.parseLong(line.split(" ")[2]);
                         if (lastModifiedServer<lastModifiedClient) { // Si el archivo del Cliente es una versión más nueva que la del Servidor
                             Client.log("El archivo " + fName + " es más nuevo que en el servidor. Mandando actualización.");
-                            notifyModification(fName, lastModifiedClient, os, is);
+                            notifyModification(fName, lastModifiedClient, os, is, oos);
                         } else if (lastModifiedServer>lastModifiedClient){ // Si el archivo es una versión más vieja que la del Servidor
                             // Hacer un GET y conseguir el archivo
                             Client.log("El archivo " + fName + " es más antiguo que en el servidor. Obteniendo actualización.");
-                        	getFileEvent(fName, os, is);
+                        	getFileEvent(fName, os, is, ois);
                         }
                         //Si no hemos entrado al if, es porque tenemos la versión más reciente.
                         currentFiles.remove(fName);
@@ -97,7 +100,7 @@ public class VersionChecker extends TimerTask{
                     		// El archivo no estaba en la carpeta
                     		Client.log("El archivo " + fName + " es nuevo. Obteniendo archivo.");
                     		// Hacer un GET y conseguir el archivo
-                            getFileEvent(fName, os, is);
+                            getFileEvent(fName, os, is, ois);
                     	} else {
                     		// El archivo estaba antes en la carpeta, y ahora ya no!!
                     		// Eso es que lo ha borrado el cliente.
@@ -111,7 +114,7 @@ public class VersionChecker extends TimerTask{
                     		//
                     		// Posible solución: hacer que el servidor permita cualquier MODIFY después de un DELETE
                     		// aunque hay que pensarlo bien para no liarla en otros casos.
-                    		notifyDelete(fName, Calendar.getInstance().getTimeInMillis(), os, is);
+                    		notifyDelete(fName, Calendar.getInstance().getTimeInMillis(), os, is, oos);
                     	}
                     }                    
                 } else if (res.startsWith("DELETION")) {
@@ -128,7 +131,7 @@ public class VersionChecker extends TimerTask{
             	//Aqui notUpdatedFile es un archivo que no hemos recibido del servidor pero que tenemos
             	File ourFile = dir.listFiles((file,name)->name.equals(notUpdatedFile))[0];
             	Client.log("Añadiendo archivo " + notUpdatedFile + " al servidor.");
-            	notifyModification(notUpdatedFile, ourFile.lastModified(), os, is);
+            	notifyModification(notUpdatedFile, ourFile.lastModified(), os, is, oos);
             }
             
 
@@ -140,10 +143,9 @@ public class VersionChecker extends TimerTask{
         Client.log("Finalizada actualización periódica.");
     }
 
-    private void notifyModification (String fileName, long lastModified, OutputStream os, InputStream is) throws IOException {
+    private void notifyModification (String fileName, long lastModified, OutputStream os, InputStream is, ObjectOutputStream oos) throws IOException {
         PrintWriter out = new PrintWriter(os);
         BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        ObjectOutputStream oos = new ObjectOutputStream(os);
         
         FileEvent fileModification = new FileModificationEvent(fileName, lastModified);
         out.println("PUSH");
@@ -159,10 +161,9 @@ public class VersionChecker extends TimerTask{
         }
     }
 
-    private void notifyDelete (String fileName, long lastModified, OutputStream os, InputStream is) throws IOException {
+    private void notifyDelete (String fileName, long lastModified, OutputStream os, InputStream is, ObjectOutputStream oos) throws IOException {
         PrintWriter out = new PrintWriter(os);
         BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        ObjectOutputStream oos = new ObjectOutputStream(os);
         
         FileEvent fileModification = new FileDeletionEvent(fileName, lastModified);
         out.println("PUSH");
@@ -178,10 +179,9 @@ public class VersionChecker extends TimerTask{
         }
     }
 
-    private void getFileEvent (String fName, OutputStream os, InputStream is) throws IOException, ClassNotFoundException {
+    private void getFileEvent (String fName, OutputStream os, InputStream is, ObjectInputStream ois) throws IOException, ClassNotFoundException {
         PrintWriter out = new PrintWriter(os);
         BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        ObjectInputStream ois = new ObjectInputStream(is);
         
         out.println("GET " + fName);
         out.flush();
