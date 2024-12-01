@@ -30,8 +30,9 @@ public class Server {
                 log.getFiles().forEach((e) -> {
                 	System.out.print(e + " ");
                 	if (e instanceof FileModificationEvent ev) {
-                		ev.getIps().forEach((ip) -> System.out.println(ip+ ","));
+                		ev.getIps().forEach((ip) -> System.out.print(ip+ ","));
                 	}
+                	System.out.println();
                 });
             }
         } while (!sel.equalsIgnoreCase("2"));

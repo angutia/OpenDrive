@@ -69,7 +69,9 @@ public class ClientHandler extends Thread{
                     
                     if (!response.equalsIgnoreCase("OK")) {
                         //TODO better error handling?
+                    	System.out.println();
                         System.err.println("[ClientHandler] Client sent error '" + response + "'");
+                        System.out.println("> ");
                         continue;
                     }
                     //Add the client ip to the list of updated clients
@@ -78,7 +80,7 @@ public class ClientHandler extends Thread{
             } else if (read.matches("^PUSH$")) {
                 try {
                     FileEvent event = (FileEvent) ois.readObject();
-                    System.out.println("Received push: " + event);
+                    //System.out.println("Received push: " + event);
                     long lastTime = Server.log.pushUpdate(event, this.client.getInetAddress().getHostAddress());
 
                     writer.println((lastTime > event.getTime()) ? "ERROR NEWER VERSION AVAILABLE" : "OK");
