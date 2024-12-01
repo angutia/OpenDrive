@@ -238,7 +238,7 @@ public class ConfigGUI extends JFrame {
 		txtLog.setBackground(new Color(255, 255, 255));
 		txtLog.setEditable(false);
 		txtLog.setFont(new Font("Monospaced", Font.PLAIN, 14));
-		txtLog.setText("1s: Obtenido registro del servidor\r\n5s: Obteniendo archivo de cliente 1.1.1.1\r\n10s: Finalizada actualización\r\n");
+		//txtLog.setText("1s: Obtenido registro del servidor\r\n5s: Obteniendo archivo de cliente 1.1.1.1\r\n10s: Finalizada actualización\r\n");
 
 		JScrollPane logScrollPane = new JScrollPane(txtLog);
 		
