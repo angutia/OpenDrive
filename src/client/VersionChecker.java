@@ -237,7 +237,8 @@ public class VersionChecker extends TimerTask{
                     out.println("OK"); // Notifica al servidor de que ha actualizado el archivo
                     modificationCompleted = true;
                     //Ponemos la fecha de útlima modificación correcta
-                    toCreate.setLastModified(fileModificationEvent.getTime());
+                    if (!toCreate.setLastModified(fileModificationEvent.getTime()))
+                    	Client.log("Error al establecer la fecha de modificación del archivo. Podrían perderse datos.");
                 } else {
                     Client.log("Error al obtener el archivo " + fName + " del cliente " + IP + ": " + res);
                 }
