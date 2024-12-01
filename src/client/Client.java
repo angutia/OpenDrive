@@ -27,7 +27,7 @@ public class Client {
 
     private static long refreshRate; // Refresh rate in milliseconds
     public static String dirRoute;
-    public static String serverHost;
+    public static String serverHost = "localhost";
     public static int serverPort = 8000;
     
     private static Timer timer;
@@ -39,7 +39,7 @@ public class Client {
     private static boolean close = false;
 
     public static void main (String [] args) {
-        dirRoute = "E:\\Prueba OpenDrive";
+        dirRoute = "C:\\Users\\PcBox\\Desktop\\cliente1";
         refreshRate=30000;
 		
 		setupTray();
