@@ -46,8 +46,10 @@ public class VersionChecker extends TimerTask{
     @Override
     public void run() {
         dir = new File(dirRoute);
-        if (!dir.isDirectory()) Client.log("Imposible acceder al directorio en la ruta especificada.");
-
+        if (!dir.isDirectory()) {
+        	Client.log("Imposible acceder al directorio en la ruta especificada.");
+        	return;
+        }
         List<String> currentFiles = new ArrayList<>(Arrays.asList(dir.list()));
         
         List<String> serverFiles = new ArrayList<>();
@@ -201,11 +203,10 @@ public class VersionChecker extends TimerTask{
         
         FileModificationEvent fileModificationEvent = (FileModificationEvent) fileEvent;
         File [] fNameList = dir.listFiles((file,name)->name.equals(fName));
-        if (fNameList.length!=0) {
-            fNameList[0].delete();
-        }
+        
         Set<String> IPs = fileModificationEvent.getIps();
         boolean modificationCompleted = false;
+        File toCreate = new File(dir, fName);
         for (String IP : IPs) {
         	if (modificationCompleted) break;
             // Se conecta a otro cliente en IP
@@ -213,7 +214,7 @@ public class VersionChecker extends TimerTask{
             PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream());
             InputStream clientIs = clientSocket.getInputStream();
             DataInputStream clientIn = new DataInputStream(clientIs); 
-            FileOutputStream fos = new FileOutputStream(new File(dir,fName));
+            FileOutputStream fos = new FileOutputStream(toCreate);
             ){
                 clientOut.println("GET " + fName);
                 clientOut.flush();
@@ -221,6 +222,9 @@ public class VersionChecker extends TimerTask{
                 @SuppressWarnings("deprecation")
 				String res = clientIn.readLine();
                 if (res.startsWith("OK")) {
+                	if (fNameList.length!=0) {
+                        fNameList[0].delete(); // Solo borramos el archivo si sabemos que vamos a poder actualizarlo
+                    }
                     byte [] buff = new byte[2048];
                     int read = clientIs.read(buff);
                     while(read!=-1) {
@@ -232,6 +236,8 @@ public class VersionChecker extends TimerTask{
                     Client.log("Archivo " + fName + " actualizado correctamente desde el cliente " + IP);
                     out.println("OK"); // Notifica al servidor de que ha actualizado el archivo
                     modificationCompleted = true;
+                    //Ponemos la fecha de útlima modificación correcta
+                    toCreate.setLastModified(fileModificationEvent.getTime());
                 } else {
                     Client.log("Error al obtener el archivo " + fName + " del cliente " + IP + ": " + res);
                 }

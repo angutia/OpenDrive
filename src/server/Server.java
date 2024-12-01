@@ -8,6 +8,8 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import utils.FileModificationEvent;
+
 public class Server {
 
     public static UpdateLog log = new UpdateLog();
@@ -25,7 +27,12 @@ public class Server {
             System.out.print("Menú de servidor. Introduce opción\n 1. Mostrar registro de actualización\n 2. Salir\n>");
             sel = k.nextLine();
             if (sel.equalsIgnoreCase("1")) {
-                log.getFiles().forEach(System.out::println);
+                log.getFiles().forEach((e) -> {
+                	System.out.print(e + " ");
+                	if (e instanceof FileModificationEvent ev) {
+                		ev.getIps().forEach((ip) -> System.out.println(ip+ ","));
+                	}
+                });
             }
         } while (!sel.equalsIgnoreCase("2"));
         System.out.println("Apagado servidor. Saliendo.");

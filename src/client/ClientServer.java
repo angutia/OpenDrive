@@ -32,7 +32,7 @@ public class ClientServer implements Runnable{
             os = socket.getOutputStream();
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(os);
-
+            
             String message = in.readLine();
             if (message.matches("^GET .*")) {
                 String fName = message.split(" ")[1];
@@ -51,7 +51,7 @@ public class ClientServer implements Runnable{
                         read = fis.read(buff, 0, read);
                     }
                     os.flush();
-
+                    
                     fis.close();
                 } else {
                     out.println("ERROR FILE NOT FOUND");
