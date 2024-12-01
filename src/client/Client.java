@@ -52,11 +52,11 @@ public class Client {
 		recreateTimerTask();
 		
 		
-        log("Finished client startup.");
+        log("Cliente inicializado.");
         try (ServerSocket clientServerSocket = new ServerSocket(6666)) {
-            while (true && !close) {
+        	clientServerSocket.setSoTimeout(10*1000);
+        	while (true && !close) {
                 try {
-                	clientServerSocket.setSoTimeout(10*1000);
                 	//log("Waiting for clients.");
                     Socket clientSocket = clientServerSocket.accept();
                     pool.execute(new ClientServer(clientSocket, dirRoute));
