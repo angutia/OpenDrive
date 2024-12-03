@@ -119,7 +119,7 @@ public class VersionChecker extends TimerTask{
                     		notifyDelete(fName, Calendar.getInstance().getTimeInMillis(), os, is, oos);
                     	}
                     }                    
-                } else if (res.startsWith("DELETION")) {
+                } else if (line.startsWith("DELETION")) {
                     if (currentFiles.remove(fName)) { // En el caso de que exista en la carpeta Cliente el archivo que ha sido borrado
                         // Manejar el borrado
                         Client.log("Borrando el archivo " + fName);
