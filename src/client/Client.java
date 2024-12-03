@@ -8,12 +8,17 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Calendar;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -24,6 +29,11 @@ import javax.swing.ImageIcon;
 import client.gui.ConfigGUI;
 
 public class Client {
+    private static String OS = (System.getProperty("os.name")).toUpperCase();
+    private static String appDataRoute = null;
+    private static Properties properties = new Properties();
+    private static File configDir = null;
+    private static File configFile = null;
 
     private static long refreshRate; // Refresh rate in milliseconds
     public static String dirRoute;
@@ -41,8 +51,10 @@ public class Client {
     public static void main (String [] args) {
         dirRoute = "C:\\Users\\PcBox\\Desktop\\cliente1";
         refreshRate=30000;
-		
+
 		setupTray();
+
+        initializeConfigClient();
 		
 		ConfigGUI.setLookAndFeel();
 		gui = new ConfigGUI();
@@ -154,5 +166,118 @@ public class Client {
     public static void log(String line) {
     	//System.out.println(Calendar.getInstance().getTime() + " " + line);
     	gui.addLog(Calendar.getInstance().getTime() + " " + line);
+    }
+
+    public static void configClient() {
+        log("Guardando configuración cliente...");
+
+        if (OS.contains("WIN")) {
+            appDataRoute = System.getenv("AppData");            
+        } else {
+            appDataRoute = ".";
+        }
+
+        appDataRoute = System.getenv("AppData");
+        if (appDataRoute!=null){
+            Path configRoute = Path.of(appDataRoute, "OpenDrive");
+            configDir = new File(configRoute.toString());
+            configFile = new File(configRoute.toString(),"config.properties");
+        }
+
+        if (configFile==null) {
+            log("Error: No se encontró la ruta predefinida para el archivo de configuración del cliente.");
+            return;
+        }
+        
+        if (!configFile.isFile()) {
+            if (!configDir.isDirectory()) {
+                configDir.mkdir();
+            }
+            try {
+                configFile.createNewFile();
+            } catch (IOException e) {
+                log("Error al crear el archivo config.properties: "+e.getLocalizedMessage());
+            }
+        }
+
+        try (
+            FileOutputStream fos = new FileOutputStream(configFile);
+        ){
+            properties.setProperty("refreshRate", String.valueOf(refreshRate));
+            properties.setProperty("dirRoute", dirRoute);
+            properties.setProperty("serverHost", serverHost);
+            properties.setProperty("serverPort", String.valueOf(serverPort));
+
+            properties.store(fos, appDataRoute);
+
+        } catch (IOException e) {
+            log("Error al inicializar la configuración del cliente: "+e.getLocalizedMessage());
+        }
+        
+    }
+
+    private static void initializeConfigClient() {
+        System.out.println("Inicializando configuración cliente...");
+
+        if (OS.contains("WIN")) {
+            appDataRoute = System.getenv("AppData");            
+        } else {
+            appDataRoute = ".";
+        }
+        
+        if (appDataRoute!=null){
+            Path configRoute = Path.of(appDataRoute, "OpenDrive");
+            configDir = new File(configRoute.toString());
+            configFile = new File(configRoute.toString(),"config.properties");
+        }
+
+        if (configFile==null) {
+            System.out.println("Error: No se encontró la ruta predefinida para el archivo de configuración del cliente.");
+            return;
+        }
+        
+        if (configFile.isFile()) {
+            try (
+                FileInputStream fis = new FileInputStream(configFile);
+            ){
+                properties.load(fis);
+                refreshRate = Long.parseLong(properties.getProperty("refreshRate"));
+                dirRoute = properties.getProperty("dirRoute");
+                serverHost = properties.getProperty("serverHost");
+                serverPort = Integer.parseInt(properties.getProperty("serverPort"));
+
+            } catch (IOException e) {
+                System.out.println("Error al inicializar la configuración del cliente: "+e.getLocalizedMessage());
+            }
+        } else {
+            if (!configDir.isDirectory()) {
+                configDir.mkdir();
+            }
+
+            FileOutputStream fos = null;
+            try {
+                configFile.createNewFile();
+                fos = new FileOutputStream(configFile);
+
+                properties.setProperty("refreshRate", String.valueOf(refreshRate));
+                properties.setProperty("dirRoute", dirRoute);
+                properties.setProperty("serverHost", serverHost);
+                properties.setProperty("serverPort", String.valueOf(serverPort));
+
+                properties.store(fos, appDataRoute);
+
+                fos.close();
+            } catch (IOException e) {
+                System.out.println("Error al crear el archivo de configuración del cliente: "+e.getLocalizedMessage());
+            } finally {
+                if (fos!=null) {
+                    try {
+                        fos.close();
+                    } catch (IOException e) {
+                        System.out.println("Error al cerrar el archivo de configuración: "+e.getLocalizedMessage());
+                    }
+                }
+            }
+        }
     }
 }

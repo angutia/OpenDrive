@@ -179,6 +179,7 @@ public class ConfigGUI extends JFrame {
 				Client.serverPort=Integer.parseInt(txtPort.getText());
 				Client.setRefreshRate((int) spinner.getModel().getValue()* 1000);
 				Client.log("dirRoute: " + Client.dirRoute + "\t refreshRate: " + Client.getRefreshRate() + "\t serverHost: " + Client.serverHost + "\t serverPort: " + Client.serverPort);
+				Client.configClient();
 			}
 		});
 		
