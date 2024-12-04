@@ -23,6 +23,6 @@ public abstract class FileEvent implements Serializable {
      * @return "{evenType} {fileName} {eventTime}"
      */
     public String toString() {
-        return this.fileName + " " + this.eventTime;
+        return this.eventTime + " " + this.fileName;
     }
 }

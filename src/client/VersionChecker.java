@@ -80,12 +80,12 @@ public class VersionChecker extends TimerTask{
             // lista files. Así sabremos si hay algún archivo sobre el que no hemos 
             // sido notificados.
             for(String line : serverFiles) {
-            	String fName = line.split(" ")[1];
+            	String fName = line.substring(line.indexOf(" ", line.indexOf(" ")+1)+1);
                 File [] fNameList = dir.listFiles((file,name)->name.equals(fName));              
                 if (line.startsWith("MODIFICATION")) {
                     if (currentFiles.contains(fName)) { // En el caso de que ya exista el archivo en la carpeta Cliente
                         long lastModifiedClient = fNameList[0].lastModified();
-                        long lastModifiedServer = Long.parseLong(line.split(" ")[2]);
+                        long lastModifiedServer = Long.parseLong(line.split(" ")[1]);
                         if (lastModifiedServer<lastModifiedClient) { // Si el archivo del Cliente es una versión más nueva que la del Servidor
                             Client.log("El archivo " + fName + " es más nuevo que en el servidor. Mandando actualización.");
                             notifyModification(fName, lastModifiedClient, os, is, oos);
