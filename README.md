@@ -21,8 +21,8 @@ CLIENTE: OK/ERROR <error> #Notifica que ha acabado de actualizar el archivo
 Conseguir la última actualización de todos los archivos:
 ```
 CLIENTE: GETALL
-SERVIDOR: MODIFICATION <nombre_archivo> <fecha_modificación>
-          DELETION <nombre_archivo2> <fecha_modificación2> #Si el archivo ha sido borrado
+SERVIDOR: MODIFICATION <fecha_modificación> <nombre_archivo>
+          DELETION <fecha_modificación2> <nombre_archivo2>#Si el archivo ha sido borrado
           ...
           END
 ```
@@ -31,12 +31,6 @@ Notificar finalización de conexión:
 CLIENTE: EXIT
 SERVER: OK
 ````
-## No sé si necesitamos este
-Notificar un renombrado:
-```
-CLIENTE: RENAME <nombre_viejo> <nombre_nuevo> <fecha_modificación>
-SERVIDOR: OK/ERROR <error>
-```
 
 ## Especificación de protocolo cliente - cliente
 Conseguir un archivo:
