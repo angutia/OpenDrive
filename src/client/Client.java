@@ -177,7 +177,6 @@ public class Client {
             appDataRoute = ".";
         }
 
-        appDataRoute = System.getenv("AppData");
         if (appDataRoute!=null){
             Path configRoute = Path.of(appDataRoute, "OpenDrive");
             configDir = new File(configRoute.toString());
